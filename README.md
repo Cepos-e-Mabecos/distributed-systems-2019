@@ -6,7 +6,7 @@ This repository contains our practical project for the class of distributed syst
 - [License](#license)
 
 ## Status
-
+[![Build Status](https://travis-ci.com/Cepos-e-Mabecos/distributed-systems-2019.svg?branch=master)](https://travis-ci.com/Cepos-e-Mabecos/distributed-systems-2019)
 ## Contributing
 #### How to start
 1. [Fork](https://help.github.com/articles/fork-a-repo/) the project, clone your fork, and configure the remotes:
