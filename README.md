@@ -27,15 +27,15 @@ git pull upstream master
 ```bash
 git checkout -b <topic-branch-name>
 ```
-5. Locally merge (or rebase) the upstream development branch into your topic branch:
+4. Locally merge (or rebase) the upstream development branch into your topic branch:
 ```bash
 git pull [--rebase] upstream master
 ```
-6. Push your topic branch up to your fork:
+5. Push your topic branch up to your fork:
 ```bash
 git push origin <topic-branch-name>
 ```
-7. [Open a Pull Request](https://help.github.com/articles/about-pull-requests/) with a clear title and description against the `master` branch.
+6. [Open a Pull Request](https://help.github.com/articles/about-pull-requests/) with a clear title and description against the `master` branch.
 
 #### Code guidelines
 - Code should follow all [Google Style](https://google.github.io/styleguide/javaguide.html) guidelines.
