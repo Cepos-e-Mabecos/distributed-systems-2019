@@ -1,13 +1,29 @@
-package places;
+package rmi;
 
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import places.PlaceManager;
+import places.PlacesListInterface;
 
 public class RMIServer {
-  public static void main(String[] args) {
+  /*
+   * Attributes
+   */
+  private Integer port;
 
-    Integer port = Integer.parseInt(args[0]);
+  /*
+   * Constructor
+   */
+
+  public RMIServer(Integer port) {
+    this.port = port;
+  }
+
+  /*
+   * Starts a PlaceManager server on class port
+   */
+  public void startPlaceManagerServer() {
     Registry r = null;
 
     try {
