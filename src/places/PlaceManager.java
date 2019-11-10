@@ -17,7 +17,7 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
   /*
    * Constructor
    */
-  protected PlaceManager() throws RemoteException {
+  public PlaceManager() throws RemoteException {
     super(0);
   }
 

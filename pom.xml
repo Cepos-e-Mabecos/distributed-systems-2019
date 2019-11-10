@@ -25,13 +25,11 @@
 						<manifest>
 							<addClasspath>true</addClasspath>
 							<classpathPrefix>lib/</classpathPrefix>
-							<mainClass>places.RMIServer</mainClass>
+							<mainClass>main.Main</mainClass>
 						</manifest>
 					</archive>
 				</configuration>
 			</plugin>
 		</plugins>
-
-
 	</build>
 </project>
