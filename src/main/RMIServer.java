@@ -1,21 +1,29 @@
 package main;
 
 import java.io.IOException;
-import java.net.InetAddress;
+import java.net.MalformedURLException;
+import java.net.UnknownHostException;
+import java.rmi.Naming;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
-import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map.Entry;
+import consensus.ConsensusAppendRequest;
+import consensus.ConsensusInterface;
 import consensus.ConsensusRole;
+import consensus.ConsensusVoteRequest;
 import places.PlaceManager;
 
 public class RMIServer {
-  public static void main(String[] args) {
-    Integer multicastPort = Integer.parseInt(args[0]);
-    String multicastAddress = args[1];
-    Integer serverPort = Integer.parseInt(args[2]);
+  public static void main(String[] args) throws RemoteException, UnknownHostException {
+    String multicastAddress = args[0];
+    Integer multicastPort = Integer.parseInt(args[1]);
+    Integer thisReplicaPort = Integer.parseInt(args[2]);
 
-    PlaceManager placeList = startRMIServer(serverPort);
+    PlaceManager placeList = startRMIServer(thisReplicaPort);
 
     // Handles sending all multicast messages
     new Thread() {
@@ -24,34 +32,14 @@ public class RMIServer {
           // Sends own IP in Multicast
           try {
             placeList.sendMessage(multicastAddress, multicastPort,
-                InetAddress.getLocalHost().getHostAddress() + ":" + serverPort);
+                placeList.getLocalAddress() + ":" + placeList.getLocalPort());
           } catch (IOException e) {
             System.out.println(e.getMessage());
           }
 
-          // Holds for 10 seconds
+          // Holds for 3 seconds
           try {
-            Thread.sleep(10000);
-          } catch (InterruptedException e) {
-            System.out.println(e.getMessage());
-          }
-        }
-      }
-    }.start();
-
-    // Clears all replicas every 15s
-    new Thread() {
-      public void run() {
-        while (true) {
-          try {
-            placeList.removeAllReplicas();
-          } catch (RemoteException e) {
-            System.out.println(e.getMessage());
-          }
-
-          // Holds for 15 seconds
-          try {
-            Thread.sleep(15000);
+            Thread.sleep(3000);
           } catch (InterruptedException e) {
             System.out.println(e.getMessage());
           }
@@ -65,9 +53,8 @@ public class RMIServer {
         // Listens to other IPs in Multicast
         while (true) {
           try {
-            String replicaAddress =
-                placeList.listenMulticastMessage(multicastAddress, multicastPort);
-            placeList.addReplica(replicaAddress);
+            String response = placeList.listenMulticastMessage(multicastAddress, multicastPort);
+            placeList.addReplica(response);
           } catch (IOException e) {
             System.out.println(e.getMessage());
           }
@@ -79,33 +66,37 @@ public class RMIServer {
     new Thread() {
       public void run() {
         while (true) {
-          ConsensusRole current = placeList.getRole();
+          ConsensusRole currentRole = placeList.getCurrentRole();
+          if (currentRole == ConsensusRole.FOLLOWER) {
+            handleFollower(placeList);
 
-          if (current == ConsensusRole.LEADER) {
-            System.out.println(current);
-            consensusLeader(placeList);
-
-            // Holds for 1 second
-            try {
-              Thread.sleep(1000);
-            } catch (InterruptedException e) {
-              System.out.println(e.getMessage());
-            }
-
-          } else if (current == ConsensusRole.CANDIDATE) {
-            System.out.println(current);
-            consensusCandidate(placeList);
+          } else if (currentRole == ConsensusRole.CANDIDATE) {
+            handleCandidate(placeList);
 
           } else {
-            System.out.println(current);
-            consensusFollower(placeList);
+            handleLeader(placeList);
+          }
+        }
+      }
+    }.start();
+
+    // Prints current replica state every 5s
+    new Thread() {
+      public void run() {
+        while (true) {
+          System.out.println(placeList);
+          try {
+            Thread.sleep(5000);
+          } catch (InterruptedException e) {
+            System.out.println(e.getMessage());
           }
         }
       }
     }.start();
   }
 
-  private static PlaceManager startRMIServer(Integer serverPort) {
+  private static PlaceManager startRMIServer(Integer serverPort)
+      throws RemoteException, UnknownHostException {
     Registry r = null;
     PlaceManager placeList = null;
 
@@ -114,146 +105,87 @@ public class RMIServer {
       r = LocateRegistry.createRegistry(serverPort);
     } catch (RemoteException a) {
       System.out.println(serverPort + " is already used.");
-      try {
-        System.out.println("Getting registry on port: " + serverPort);
-        r = LocateRegistry.getRegistry(serverPort);
-      } catch (NumberFormatException | RemoteException e) {
-        System.out.println("Error getting registry of port: " + serverPort);
-      }
+    } finally {
+      System.out.println("Getting registry on port: " + serverPort);
+      r = LocateRegistry.getRegistry(serverPort);
     }
 
-    try {
-      placeList = new PlaceManager(serverPort);
-      r.rebind("placelist", placeList);
+    placeList = new PlaceManager(serverPort);
+    r.rebind("placelist", placeList);
 
-      System.out.println("PlaceManager running on port: " + serverPort);
-    } catch (Exception e) {
-      System.out.println("Error trying to run PlaceManager on port: " + serverPort);
-    }
+    System.out.println("PlaceManager running on port: " + serverPort);
 
     return placeList;
   }
 
-  private static void consensusLeader(PlaceManager placeList) {
-    // Sends Unicast Message to all replicas
-    ArrayList<String> replicas = placeList.getReplicas();
-    for (String address : replicas) {
-      // Splits full address (host:port)
-      String[] fullAddress = address.split(":");
-      String host = fullAddress[0];
-      Integer port = Integer.parseInt(fullAddress[1]);
-
-      // Sends own address labeled as leader
-      try {
-        placeList.sendMessage(host, port, "leader," + InetAddress.getLocalHost().getHostAddress()
-            + ":" + placeList.getServerPort());
-      } catch (IOException e) {
-        System.out.println(e.getMessage());
-      }
-    }
+  private static void handleFollower(PlaceManager placeList) {
+    while (System.nanoTime() - placeList.getLastTime() < placeList.getCurrentTimeout());
+    placeList.setLeaderAddress(null);
+    placeList.setLeaderPort(null);
+    placeList.setCandidateAddress(null);
+    placeList.setCandidatePort(null);
+    placeList.setCurrentRole(ConsensusRole.CANDIDATE);
   }
 
-  private static void consensusCandidate(PlaceManager placeList) {
-    new Thread() {
-      public void run() {
-        // Sends Unicast Message to all replicas
-        ArrayList<String> replicas = placeList.getReplicas();
-        for (String address : replicas) {
-          // Splits full address (host:port)
-          String[] fullAddress = address.split(":");
-          String host = fullAddress[0];
-          Integer port = Integer.parseInt(fullAddress[1]);
+  private static void handleCandidate(PlaceManager placeList) {
+    Integer numberVotes = 0;
+    try {
+      HashMap<String, Date> replicas = placeList.getAllReplicas();
 
-          // Sends own address labeled as candidate
-          try {
-            placeList.sendMessage(host, port, "candidate,"
-                + InetAddress.getLocalHost().getHostAddress() + ":" + placeList.getServerPort());
-          } catch (IOException e) {
-            System.out.println(e.getMessage());
-          }
-        }
+      // Sends vote request while voting doesn't expire
+      for (Entry<String, Date> pair : replicas.entrySet()) {
+        ConsensusInterface cu =
+            (ConsensusInterface) Naming.lookup("rmi://" + pair.getKey() + "/placelist");
 
-      }
-    }.start();
-
-    Integer numberVotes = 1;
-    // While numberVotes is not majority
-    ArrayList<String> replicas = placeList.getReplicas();
-    while (numberVotes < replicas.size() / 2) {
-      try {
-        // Gets message and splits it on ","
-        String[] message = placeList.listenUnicastMessage(placeList.getServerPort()).split(",");
-
-        if (message[0].equals("leader")) {
-          // New leader was found before
-          placeList.setRole(ConsensusRole.FOLLOWER);
-          return;
-        }
-
-        if (message[0].equals("vote")) {
-          // New vote received
+        // Asks for a vote
+        if (cu.voteRequest(new ConsensusVoteRequest(placeList.getCurrentTerm() + 1,
+            placeList.getLocalAddress(), placeList.getLocalPort())) == true) {
           numberVotes++;
         }
-      } catch (IOException e) {
-        System.out.println(e.getMessage());
       }
-    }
 
-    // New Leader!
-    placeList.setRole(ConsensusRole.LEADER);
-  }
-
-  private volatile static Long start;
-
-  private static void consensusFollower(PlaceManager placeList) {
-    start = System.nanoTime();
-    new Thread() {
-
-      public void run() {
-        while ((Long) System.nanoTime() - start < 10000000000L) {
-          try {
-            // Gets message and splits it on ","
-            String[] message = placeList.listenUnicastMessage(placeList.getServerPort()).split(",");
-
-            if (message[0].equals("leader")) {
-              // Resets timer
-              start = System.nanoTime();
-              // New leader was found before
-              placeList.setRole(ConsensusRole.FOLLOWER);
-            }
-
-            if (message[0].equals("candidate")) {
-              // New candidate received
-              String[] fullAddress = message[1].split(":");
-              String host = fullAddress[0];
-              Integer port = Integer.parseInt(fullAddress[1]);
-              // Sends vote
-              placeList.sendMessage(host, port, "vote,"
-                  + InetAddress.getLocalHost().getHostAddress() + ":" + placeList.getServerPort());
-            }
-
-            if (message[0].equals("exit")) {
-              this.interrupt();
-              return;
-            }
-          } catch (IOException e) {
-            System.out.println(e.getMessage());
-          }
-        }
-
+      if (numberVotes > replicas.size() / 2) {
+        // I'm a new leader
+        placeList.setCandidateAddress(null);
+        placeList.setCandidatePort(null);
+        placeList.setLeaderAddress(placeList.getLocalAddress());
+        placeList.setLeaderPort(placeList.getLocalPort());
+        placeList.setCurrentTerm(placeList.getCurrentTerm() + 1);
+        placeList.setCurrentRole(ConsensusRole.LEADER);
+      } else {
+        // Back to follower
+        placeList.newTimeout();
+        placeList.setCandidateAddress(null);
+        placeList.setCandidatePort(null);
+        placeList.setCurrentRole(ConsensusRole.FOLLOWER);
       }
-    }.start();
-    // Loop happens if we in the first 10s
-    while ((Long) System.nanoTime() - start < 10000000000L) {
-
-    }
-    try {
-      placeList.sendMessage(InetAddress.getLocalHost().getHostAddress(), placeList.getServerPort(),
-          "exit,");
-    } catch (IOException e) {
+    } catch (RemoteException | MalformedURLException | NotBoundException e) {
       System.out.println(e.getMessage());
     }
-    // Becomes candidate
-    placeList.setRole(ConsensusRole.CANDIDATE);
+  }
+
+  private static void handleLeader(PlaceManager placeList) {
+    try {
+      HashMap<String, Date> replicas = placeList.getAllReplicas();
+
+      // Sends heartbeats to all replicas
+
+      for (Entry<String, Date> pair : replicas.entrySet()) {
+        if (pair.getKey().equals(placeList.getLocalAddress() + ":" + placeList.getLocalPort())) {
+          // Doesn't send append messages to itself
+          continue;
+        }
+
+        ConsensusInterface cu =
+            (ConsensusInterface) Naming.lookup("rmi://" + pair.getKey() + "/placelist");
+
+        // Sends heartbeat
+        cu.appendRequest(new ConsensusAppendRequest(placeList.getCurrentTerm(),
+            placeList.getLocalAddress(), placeList.getLocalPort()));
+      }
+    } catch (RemoteException | MalformedURLException | NotBoundException e) {
+      System.out.println(e.getMessage());
+    }
+
   }
 }

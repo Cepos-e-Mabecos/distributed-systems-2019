@@ -14,7 +14,7 @@ RUN mvn clean install
 RUN mvn dependency:resolve
 RUN mvn verify
 
-CMD java -jar ./target/RMIServer.jar $MULTICASTPORT $MULTICASTADDRESS $RMISERVERPORT
+CMD java -jar ./target/RMIServer.jar $MULTICASTADDRESS $MULTICASTPORT $RMISERVERPORT
 
 # How to use?
 # docker build --tag {nameImage} .
