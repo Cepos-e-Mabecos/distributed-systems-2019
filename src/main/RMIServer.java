@@ -9,8 +9,9 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.Date;
-import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 import consensus.ConsensusAppendRequest;
 import consensus.ConsensusInterface;
 import consensus.ConsensusRole;
@@ -62,6 +63,32 @@ public class RMIServer {
       }
     }.start();
 
+    // Handles removing all old replicas every 1 second
+    new Thread() {
+      public void run() {
+        while (true) {
+          try {
+            ConcurrentHashMap<String, Date> replicas = placeList.getAllReplicas();
+            Iterator<Entry<String, Date>> it = replicas.entrySet().iterator();
+
+            while (it.hasNext()) {
+              Entry<String, Date> pair = it.next();
+              // If replica is older than random timeout seconds
+              if (new Date().getTime() - pair.getValue().getTime() < placeList
+                  .getCurrentTimeout()) {
+                it.remove();
+              }
+            }
+
+            Thread.sleep(3000);
+          } catch (RemoteException | InterruptedException e) {
+            System.out.println(e.getMessage());
+          }
+
+        }
+      }
+    }.start();
+
     // Handles consensus
     new Thread() {
       public void run() {
@@ -80,13 +107,13 @@ public class RMIServer {
       }
     }.start();
 
-    // Prints current replica state every 5s
+    // Prints current replica state every 3s
     new Thread() {
       public void run() {
         while (true) {
           System.out.println(placeList);
           try {
-            Thread.sleep(5000);
+            Thread.sleep(3000);
           } catch (InterruptedException e) {
             System.out.println(e.getMessage());
           }
@@ -119,18 +146,21 @@ public class RMIServer {
   }
 
   private static void handleFollower(PlaceManager placeList) {
-    while (System.nanoTime() - placeList.getLastTime() < placeList.getCurrentTimeout());
+    while (System.nanoTime() - placeList.getLastTime() < placeList.getCurrentTimeout()) {
+      /* Intentionally empty. Timeout */
+    }
     placeList.setLeaderAddress(null);
     placeList.setLeaderPort(null);
     placeList.setCandidateAddress(null);
     placeList.setCandidatePort(null);
     placeList.setCurrentRole(ConsensusRole.CANDIDATE);
+    System.out.println(placeList);
   }
 
   private static void handleCandidate(PlaceManager placeList) {
     Integer numberVotes = 0;
     try {
-      HashMap<String, Date> replicas = placeList.getAllReplicas();
+      ConcurrentHashMap<String, Date> replicas = placeList.getAllReplicas();
 
       // Sends vote request while voting doesn't expire
       for (Entry<String, Date> pair : replicas.entrySet()) {
@@ -166,7 +196,7 @@ public class RMIServer {
 
   private static void handleLeader(PlaceManager placeList) {
     try {
-      HashMap<String, Date> replicas = placeList.getAllReplicas();
+      ConcurrentHashMap<String, Date> replicas = placeList.getAllReplicas();
 
       // Sends heartbeats to all replicas
 
@@ -186,6 +216,5 @@ public class RMIServer {
     } catch (RemoteException | MalformedURLException | NotBoundException e) {
       System.out.println(e.getMessage());
     }
-
   }
 }
