@@ -10,7 +10,7 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import comunication.ComunicationInterface;
 import consensus.ConsensusAppendRequest;
 import consensus.ConsensusInterface;
@@ -28,7 +28,7 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
    * PlaceManager Attributes
    */
   private ArrayList<Place> places = new ArrayList<Place>();
-  private HashMap<String, Date> replicas = new HashMap<String, Date>();
+  private ConcurrentHashMap<String, Date> replicas = new ConcurrentHashMap<String, Date>();
   private String localAddress;
   private Integer localPort;
 
@@ -217,7 +217,8 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
    * @param replicas: contains HashMap with all replicas
    */
   @Override
-  public synchronized void addAllReplicas(HashMap<String, Date> replicas) throws RemoteException {
+  public synchronized void addAllReplicas(ConcurrentHashMap<String, Date> replicas)
+      throws RemoteException {
     this.replicas = replicas;
   }
 
@@ -237,7 +238,7 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
    * 
    */
   @Override
-  public synchronized HashMap<String, Date> getAllReplicas() throws RemoteException {
+  public synchronized ConcurrentHashMap<String, Date> getAllReplicas() throws RemoteException {
     return replicas;
   }
 
@@ -335,7 +336,7 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
     if (this.getCurrentTerm() < request.getLeaderTerm()) {
       // Reset timeout
       this.newTimeout();
-      
+
       // New leader with higher term
 
       // Reset candidate stats
@@ -357,7 +358,7 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
     if (this.getLeaderAddress() == null || this.getLeaderPort() == null) {
       // Reset timeout
       this.newTimeout();
-      
+
       // I don't have leader. Give me!
 
       // Reset candidate stats
@@ -368,23 +369,19 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
       this.setCurrentTerm(request.getLeaderTerm());
       this.setLeaderAddress(request.getLeaderAddress());
       this.setLeaderPort(request.getLeaderPort());
-      
+
       // Reset role
       this.setCurrentRole(ConsensusRole.FOLLOWER);
 
       return true;
     }
-/*
-    if (this.getLeaderAddress().equals(request.getLeaderAddress()) == false) {
-      // Not my leader address, ignore
-      return false;
-    }
-
-    if (this.getLeaderPort() != request.getLeaderPort()) {
-      // Not my leader port, ignore
-      return false;
-    }
-*/
+    /*
+     * if (this.getLeaderAddress().equals(request.getLeaderAddress()) == false) { // Not my leader
+     * address, ignore return false; }
+     * 
+     * if (this.getLeaderPort() != request.getLeaderPort()) { // Not my leader port, ignore return
+     * false; }
+     */
     // It's my actual leader, refresh
     this.newTimeout();
 
