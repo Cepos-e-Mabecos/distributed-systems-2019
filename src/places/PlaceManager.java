@@ -10,15 +10,19 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import comunication.ComunicationInterface;
 import consensus.ConsensusAppendRequest;
-import consensus.ConsensusInterface;
+import consensus.ConsensusHandlerInterface;
+import consensus.ConsensusRequestInterface;
 import consensus.ConsensusRole;
 import consensus.ConsensusVoteRequest;
 
-public class PlaceManager extends UnicastRemoteObject implements PlacesListInterface,
-    ReplicasManagerInterface, ComunicationInterface, ConsensusInterface {
+public class PlaceManager extends UnicastRemoteObject
+    implements PlacesListInterface, ReplicasManagerInterface, ComunicationInterface,
+    ConsensusRequestInterface, ConsensusHandlerInterface {
 
   /**
    * 
@@ -32,11 +36,15 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
   private String localAddress;
   private Integer localPort;
 
-  // Consensus Server Attributes
+  /*
+   * Consensus Server Attributes
+   */
   private ConsensusRole currentRole;
   private Integer currentTerm;
 
-  // Follower Attributes
+  /*
+   * Follower Attributes
+   */
   private Long lastTime;
   private Long currentTimeout;
   private String leaderAddress;
@@ -66,7 +74,9 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
     this.candidatePort = null;
   }
 
-  // Getters & Setters PlaceManager
+  /*
+   * Getters & Setters PlaceManager
+   */
   public String getLocalAddress() {
     return localAddress;
   }
@@ -83,7 +93,9 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
     this.localPort = port;
   }
 
-  // Getters & Setters ConsensusServer
+  /*
+   * Getters & Setters ConsensusServer
+   */
   public synchronized ConsensusRole getCurrentRole() {
     return currentRole;
   }
@@ -148,38 +160,58 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
     this.candidatePort = candidatePort;
   }
 
-  // String toString
+  /*
+   * String toString
+   */
+  @Override
   public String toString() {
-    return "Role: " + this.getCurrentRole() + "\nTerm: " + this.getCurrentTerm() + "\nFullAddress: "
-        + this.getLocalAddress() + ":" + this.getLocalPort();
+    return "\nRole: " + this.getCurrentRole() + "\nTerm: " + this.getCurrentTerm()
+        + "\nReplica FullAddress: " + this.getLocalAddress() + ":" + this.getLocalPort()
+        + "\nLeader FullAddress: " + this.getLeaderAddress() + ":" + this.getLeaderPort();
   }
 
-  /*
-   * This function adds a place to the arraylist of places.
+  /**
+   * This function can be called remotely to add a Place to the class ArrayList of Places.
    * 
-   * @param place: contains object of type Place to be added.
+   * @param place Contains object of type Place to be added.
+   * 
+   * @throws RemoteException When it fails to reach the the host.
+   * 
+   * @see RemoteException
+   * 
    */
   @Override
   public void addPlace(Place place) throws RemoteException {
     places.add(place);
   }
 
-  /*
-   * This function returns an arraylist of places.
+  /**
+   * This function can be called remotely to retrieve the class ArrayList of Place.
    * 
-   * @return ArrayList<Place>
+   * @return ArrayList This returns all Place.
+   * 
+   * @throws RemoteException When it fails to reach the host.
+   * 
+   * @see RemoteException
+   * 
    */
   @Override
   public ArrayList<Place> allPlaces() throws RemoteException {
     return places;
   }
 
-  /*
-   * This function returns an object of type Place based on @param.
+  /**
+   * This function can be called remotely to retrieve a specific Place from the class ArrayList of
+   * Place.
    * 
-   * @param postalCode: contains string with postalCode to be used.
+   * @param postalCode Contains string with postalCode to be used to search the Place.
    * 
-   * @return Place
+   * @return Place This returns the corresponding Place.
+   * 
+   * @throws RemoteException When it fails to reach the host.
+   * 
+   * @see RemoteException
+   * 
    */
   @Override
   public Place getPlace(String postalCode) throws RemoteException {
@@ -191,30 +223,48 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
     return null;
   }
 
-  /*
-   * Adds a replica address to the HashMap of replicas
+  /**
+   * This function can be called remotely to add an address of a PlaceManager address to the class
+   * ConcurrentHashMap that contains all addresses of all PlaceManager.
    * 
-   * @param replicaAddress: contains String with address (ip+port)
+   * @param replicaAddress Contains String with address (ip+port)
+   * 
+   * @throws RemoteException When it fails to reach the host.
+   * 
+   * @see RemoteException
+   * 
    */
   @Override
   public synchronized void addReplica(String replicaAddress) throws RemoteException {
     replicas.put(replicaAddress, new Date());
   }
 
-  /*
-   * Removes a replica address from the HashMap of replicas
+  /**
+   * This function can be called remotely to remove an address of a PlaceManager address from the
+   * class ConcurrentHashMap that contains all addresses of all PlaceManager.
    * 
-   * @param replicaAddress: contains String with address (ip+port)
+   * @param replicaAddress Contains String with address (ip+port)
+   * 
+   * @throws RemoteException When it fails to reach the host.
+   * 
+   * @see RemoteException
+   * 
    */
   @Override
   public synchronized void removeReplica(String replicaAddress) throws RemoteException {
     replicas.remove(replicaAddress);
   }
 
-  /*
-   * Adds all replicas from an HashMap to the class HashMap of replicas
+  /**
+   * This function can be called remotely to swap the class ConcurrentHashMap that contains all
+   * addresses of all PlaceManager with a new one.
    * 
-   * @param replicas: contains HashMap with all replicas
+   * @param replicas Contains ConcurrentHashMap to be used as new ConcurrentHashMap of the class.
+   * 
+   * @throws RemoteException When it fails to reach the host.
+   * 
+   * @see RemoteException
+   * 
    */
   @Override
   public synchronized void addAllReplicas(ConcurrentHashMap<String, Date> replicas)
@@ -222,8 +272,13 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
     this.replicas = replicas;
   }
 
-  /*
-   * Clears class HashMap of replicas
+  /**
+   * This function can be called remotely to clear the class ConcurrentHashMap that contains all
+   * addresses of all PlaceManager.
+   * 
+   * @throws RemoteException When it fails to reach the host.
+   * 
+   * @see RemoteException
    * 
    */
   @Override
@@ -231,10 +286,46 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
     replicas.clear();
   }
 
-  /*
-   * Serves to return all replicas from the class HashMap
+  /**
+   * This function can be called remotely to clean up old replicas from the class ConcurrentHashMap
+   * that contains all addresses of all PlaceManager.
    * 
-   * @return: an HashMap of replicas
+   * @param maximumReplicaAge Contains the max age of the replica we should consider. Must be in
+   * milliseconds.
+   * 
+   * @throws RemoteException When it fails to reach the host.
+   * 
+   * @see RemoteException
+   * 
+   */
+  @Override
+  public synchronized void cleanUpReplicas(Integer maximumReplicaAge) throws RemoteException {
+    try {
+      ConcurrentHashMap<String, Date> replicas = this.getAllReplicas();
+      Iterator<Entry<String, Date>> it = replicas.entrySet().iterator();
+
+      while (it.hasNext()) {
+        Entry<String, Date> pair = it.next();
+        // If replica is older than random timeout seconds
+        if (new Date().getTime() - pair.getValue().getTime() > maximumReplicaAge) {
+          it.remove();
+        }
+      }
+
+    } catch (RemoteException e) {
+      System.out.println(e.getMessage());
+    }
+  }
+
+  /**
+   * This function can be called remotely to retrieve the class ConcurrentHashMap that contains all
+   * addresses of all PlaceManager.
+   * 
+   * @return ConcurrentHashMap This returns all replicas.
+   * 
+   * @throws RemoteException When it fails to reach the host.
+   * 
+   * @see RemoteException
    * 
    */
   @Override
@@ -242,14 +333,19 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
     return replicas;
   }
 
-  /*
-   * Sends a udp message
+  /**
+   * This function can be used to send an Unicast Message to a given host.
    * 
-   * @param address: contains String with address
+   * @param address Contains String with address of the host.
    * 
-   * @param port: contains Integer with port
+   * @param port Contains Integer with port of the host.
    * 
-   * @param message: contains string with message to be send
+   * @param message Contains string with message to be send to the host.
+   * 
+   * @throws IOException On Input or Output error.
+   * 
+   * @see IOException
+   * 
    */
   @Override
   public void sendMessage(String address, Integer port, String message) throws IOException {
@@ -267,14 +363,19 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
     socket.close();
   }
 
-  /*
-   * Listens to MulticastMessages on given address and port. that message.
+  /**
+   * This function can be used to retrieve a Multicast Message of a given address and port.
    * 
-   * @param address: contains String with address
+   * @param address Contains String with address to listen from.
    * 
-   * @param port: contains Integer with port
+   * @param port Contains Integer with port to listen from.
    * 
-   * @return: String with message
+   * @return String This returns the message that was sent to the Multicast Group.
+   * 
+   * @throws IOException On Input or Output error.
+   * 
+   * @see IOException
+   * 
    */
   @Override
   public String listenMulticastMessage(String address, Integer port) throws IOException {
@@ -297,15 +398,17 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
     return new String(datagram.getData(), 0, datagram.getLength());
   }
 
-  /*
-   * Listens to UnicastMessages on given address and port. When a message is received, processes
-   * that message.
+  /**
+   * This function can be used to retrieve an Unicast Message of a given port from the host.
    * 
-   * @param address: contains String with address
+   * @param port Contains Integer with port to listen from.
    * 
-   * @param port: contains Integer with port
+   * @return String This returns the message that was sent to the host.
    * 
-   * @return: String with message
+   * @throws IOException On Input or Output error.
+   * 
+   * @see IOException
+   * 
    */
   @Override
   public String listenUnicastMessage(Integer port) throws IOException {
@@ -325,11 +428,23 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
     return new String(datagram.getData(), 0, datagram.getLength());
   }
 
-  // Implementations
+  /**
+   * This function can be called remotely to make an RPC AppendRequest. Normally, the leaders invoke
+   * this method on all replicas.
+   * 
+   * @param request Contains the ConsensusAppendRequest with all information from the leader.
+   * 
+   * @return Boolean Returns true if it accepted leader RPC, false otherwise.
+   * 
+   * @throws RemoteException When it fails to reach the host.
+   * 
+   * @see RemoteException
+   * 
+   */
   @Override
   public Boolean appendRequest(ConsensusAppendRequest request) throws RemoteException {
     if (this.getCurrentTerm() > request.getLeaderTerm()) {
-      // My term is higher
+      // My term is higher, not my leader
       return false;
     }
 
@@ -392,10 +507,23 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
 
   }
 
+  /**
+   * This function can be called remotely to make an RPC VoteRequest. Normally, the candidates
+   * invoke this method on all replicas.
+   * 
+   * @param request Contains the ConsensusVoteRequest with all information from the candidate.
+   * 
+   * @return Boolean Returns true if it accepted candidate RPC, false otherwise.
+   * 
+   * @throws RemoteException When it fails to reach the host.
+   * 
+   * @see RemoteException
+   * 
+   */
   @Override
   public Boolean voteRequest(ConsensusVoteRequest request) throws RemoteException {
     if (this.getCurrentTerm() > request.getCandidateTerm()) {
-      // My term is higher
+      // My term is higher, ignore
       return false;
     }
 
@@ -418,6 +546,23 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
     return false;
   }
 
+  /**
+   * This function is used to handle the behaviour of this PlaceManager server.
+   * 
+   * @param replica Contains replica to be managed.
+   * 
+   * @see ConsensusRole
+   * 
+   */
+  @Override
+  public void handler(PlaceManager replica) {
+    this.getCurrentRole().handler(replica);
+  }
+
+  /**
+   * This function is used to generate a new Timeout on this PlaceManager server.
+   * 
+   */
   public void newTimeout() {
     this.setLastTime(System.nanoTime());
     this.setCurrentTimeout((long) (Math.random() * 5000 + 5000) * 1000000);
