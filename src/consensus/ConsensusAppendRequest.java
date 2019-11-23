@@ -8,20 +8,26 @@ public class ConsensusAppendRequest implements Serializable {
    * 
    */
   private static final long serialVersionUID = -8072318929579338694L;
-  
-  // Attributes
+
+  /*
+   * Attributes
+   */
   private Integer leaderTerm;
   private String leaderAddress;
   private Integer leaderPort;
- 
-  // Constructor
+
+  /*
+   * Constructor
+   */
   public ConsensusAppendRequest(Integer leaderTerm, String leaderAddress, Integer leaderPort) {
     this.leaderTerm = leaderTerm;
     this.leaderAddress = leaderAddress;
     this.leaderPort = leaderPort;
   }
 
-  // Getters & Setters
+  /*
+   * Getters & Setters
+   */
   public Integer getLeaderTerm() {
     return leaderTerm;
   }
@@ -37,11 +43,11 @@ public class ConsensusAppendRequest implements Serializable {
   public void setLeaderAddress(String leaderAddress) {
     this.leaderAddress = leaderAddress;
   }
-  
+
   public Integer getLeaderPort() {
     return leaderPort;
   }
-  
+
   public void setLeaderPort(Integer leaderPort) {
     this.leaderPort = leaderPort;
   }

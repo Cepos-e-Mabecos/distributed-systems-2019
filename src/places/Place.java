@@ -6,14 +6,13 @@ public class Place implements Serializable {
   /**
    * 
    */
-  private static final long serialVersionUID = 1L;
-
+  private static final long serialVersionUID = -6079605330465503229L;
   /*
    * Attributes
    */
   private String postalCode;
   private String locality;
-  
+
   /*
    * Constructor
    */

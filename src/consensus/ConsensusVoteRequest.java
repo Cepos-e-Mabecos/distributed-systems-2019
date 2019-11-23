@@ -9,19 +9,25 @@ public class ConsensusVoteRequest implements Serializable {
    */
   private static final long serialVersionUID = 4139517296885376205L;
   
-  // Attributes
+  /*
+   * Attributes
+   */
   private Integer candidateTerm;
   private String candidateAddress;
   private Integer candidatePort;
   
-  // Constructor
+  /*
+   * Constructor
+   */
   public ConsensusVoteRequest(Integer candidateTerm, String candidateAddress, Integer candidatePort) {
     this.candidateTerm = candidateTerm;
     this.candidateAddress = candidateAddress;
     this.candidatePort = candidatePort;
   }
 
-  // Getters & Setters
+  /*
+   * Getters & Setters
+   */
   public Integer getCandidateTerm() {
     return candidateTerm;
   }
