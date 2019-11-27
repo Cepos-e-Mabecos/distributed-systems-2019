@@ -1,19 +1,24 @@
 package main;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import comunication.ComunicationMessage;
+import comunication.FullAddress;
 import places.PlaceManager;
 
 public class RMIServer {
   public static void main(String[] args) throws RemoteException, UnknownHostException {
+
     String multicastAddress = args[0];
     Integer multicastPort = Integer.parseInt(args[1]);
     Integer thisReplicaPort = Integer.parseInt(args[2]);
 
-    PlaceManager placeList = startRMIServer(thisReplicaPort);
+    PlaceManager placeList = startRMIServer(multicastAddress, multicastPort,
+        InetAddress.getLocalHost().getHostAddress(), thisReplicaPort);
 
     Integer multicastTimeout = 3000;
 
@@ -21,15 +26,15 @@ public class RMIServer {
     new Thread() {
       public void run() {
         while (true) {
-          // Sends own IP in Multicast
+          // Sends current state to multicast
           try {
-            placeList.sendMessage(multicastAddress, multicastPort,
-                placeList.getLocalAddress() + ":" + placeList.getLocalPort());
+            placeList.sendMessage(placeList.getMulticastAddress(), new ComunicationMessage("IP",
+                placeList.getCurrentTerm(), placeList.getLocalAddress()));
           } catch (IOException e) {
             System.out.println(e.getMessage());
           }
 
-          // Holds for 3 seconds
+          // Holds for multicastTimeout seconds
           try {
             Thread.sleep(multicastTimeout);
           } catch (InterruptedException e) {
@@ -42,12 +47,15 @@ public class RMIServer {
     // Handles listening to multicast messages
     new Thread() {
       public void run() {
-        // Listens to other IPs in Multicast
+        // Listens to other replicas messages in Multicast
         while (true) {
           try {
-            String response = placeList.listenMulticastMessage(multicastAddress, multicastPort);
-            placeList.addReplica(response);
-          } catch (IOException e) {
+            ComunicationMessage response =
+                placeList.listenMulticastMessage(placeList.getMulticastAddress());
+            if (response.getMessage().equals("IP")) {
+              placeList.addReplica(response.getFullAddress());
+            }
+          } catch (IOException | ClassNotFoundException e) {
             System.out.println(e.getMessage());
           }
         }
@@ -58,11 +66,7 @@ public class RMIServer {
     new Thread() {
       public void run() {
         while (true) {
-          try {
-            placeList.cleanUpReplicas(2 * multicastTimeout);
-          } catch (RemoteException e) {
-            System.out.println(e.getMessage());
-          }
+          placeList.cleanUpReplicas(2 * multicastTimeout);
         }
       }
     }.start();
@@ -91,8 +95,8 @@ public class RMIServer {
     }.start();
   }
 
-  private static PlaceManager startRMIServer(Integer serverPort)
-      throws RemoteException, UnknownHostException {
+  private static PlaceManager startRMIServer(String multicastAddress, Integer multicastPort,
+      String serverAddress, Integer serverPort) throws RemoteException, UnknownHostException {
     Registry r = null;
     PlaceManager placeList = null;
 
@@ -106,7 +110,8 @@ public class RMIServer {
       r = LocateRegistry.getRegistry(serverPort);
     }
 
-    placeList = new PlaceManager(serverPort);
+    placeList = new PlaceManager(new FullAddress(multicastAddress, multicastPort),
+        new FullAddress(serverAddress, serverPort));
     r.rebind("placelist", placeList);
 
     System.out.println("PlaceManager running on port: " + serverPort);

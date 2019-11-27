@@ -1,36 +1,27 @@
 package places;
 
-import java.rmi.Remote;
-import java.rmi.RemoteException;
 import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
+import comunication.FullAddress;
 
-public interface ReplicasManagerInterface extends Remote {
+public interface ReplicasManagerInterface {
   /**
    * This function can be called remotely to add an address of a PlaceManager address to the class
    * ConcurrentHashMap that contains all addresses of all PlaceManager.
    * 
-   * @param replicaAddress Contains String with address (ip+port)
-   * 
-   * @throws RemoteException When it fails to reach the host.
-   * 
-   * @see RemoteException
+   * @param replicaAddress Contains FullAddress with address (ip+port)
    * 
    */
-  void addReplica(String replicaAddress) throws RemoteException;
+  void addReplica(FullAddress replicaAddress);
 
   /**
    * This function can be called remotely to remove an address of a PlaceManager address from the
    * class ConcurrentHashMap that contains all addresses of all PlaceManager.
    * 
-   * @param replicaAddress Contains String with address (ip+port)
-   * 
-   * @throws RemoteException When it fails to reach the host.
-   * 
-   * @see RemoteException
+   * @param replicaAddress Contains FullAddress with address (ip+port)
    * 
    */
-  void removeReplica(String replicaAddress) throws RemoteException;
+  void removeReplica(FullAddress replicaAddress);
 
   /**
    * This function can be called remotely to swap the class ConcurrentHashMap that contains all
@@ -38,23 +29,15 @@ public interface ReplicasManagerInterface extends Remote {
    * 
    * @param replicas Contains ConcurrentHashMap to be used as new ConcurrentHashMap of the class.
    * 
-   * @throws RemoteException When it fails to reach the host.
-   * 
-   * @see RemoteException
-   * 
    */
-  void addAllReplicas(ConcurrentHashMap<String, Date> replicas) throws RemoteException;
+  void addAllReplicas(ConcurrentHashMap<FullAddress, Date> replicas);
 
   /**
    * This function can be called remotely to clear the class ConcurrentHashMap that contains all
    * addresses of all PlaceManager.
    * 
-   * @throws RemoteException When it fails to reach the host.
-   * 
-   * @see RemoteException
-   * 
    */
-  void removeAllReplicas() throws RemoteException;
+  void removeAllReplicas();
 
   /**
    * This function can be called remotely to clean up old replicas from the class ConcurrentHashMap
@@ -63,12 +46,8 @@ public interface ReplicasManagerInterface extends Remote {
    * @param maximumReplicaAge Contains the max age of the replica we should consider. Must be in
    * milliseconds.
    * 
-   * @throws RemoteException When it fails to reach the host.
-   * 
-   * @see RemoteException
-   * 
    */
-  void cleanUpReplicas(Integer maximumReplicaAge) throws RemoteException;
+  void cleanUpReplicas(Integer maximumReplicaAge);
 
   /**
    * This function can be called remotely to retrieve the class ConcurrentHashMap that contains all
@@ -76,10 +55,6 @@ public interface ReplicasManagerInterface extends Remote {
    * 
    * @return ConcurrentHashMap This returns all replicas.
    * 
-   * @throws RemoteException When it fails to reach the host.
-   * 
-   * @see RemoteException
-   * 
    */
-  ConcurrentHashMap<String, Date> getAllReplicas() throws RemoteException;
+  ConcurrentHashMap<FullAddress, Date> getAllReplicas();
 }
