@@ -15,12 +15,12 @@ public interface ComunicationInterface {
    * @see IOException
    * 
    */
-  void sendMessage(FullAddress fullAddresss, ComunicationMessage message) throws IOException;
+  void sendMessage(FullAddress fullAddress, ComunicationMessage message) throws IOException;
 
   /**
    * This function should be used to retrieve a Multicast Message of a given address and port.
    * 
-   * @param FullAddress Contains FullAddres with address and port to listen from.
+   * @param fullAddress Contains FullAddress with address and port to listen from.
    * 
    * @return ComunicationMessage This returns the message that was sent to the Multicast Group.
    * 

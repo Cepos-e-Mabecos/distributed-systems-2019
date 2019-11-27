@@ -322,7 +322,7 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
   /**
    * This function can be used to retrieve a Multicast Message of a given address and port.
    * 
-   * @param FullAddress Contains FullAddres with address and port to listen from.
+   * @param fullAddress Contains FullAddres with address and port to listen from.
    * 
    * @return ComunicationMessage This returns the message that was sent to the Multicast Group.
    * 
