@@ -84,35 +84,18 @@ public enum ConsensusRole implements ConsensusHandlerInterface {
               }
 
               // My term is the same
+              // Reset timeout
+              replica.newTimeout();
 
-              if (replica.getLeaderAddress() == null) {
-                // I don't have leader. Give me!
+              // Reset candidate stats
+              replica.setCandidateAddress(null);
 
-                // Reset timeout
-                replica.newTimeout();
+              // Append new leader
+              replica.setCurrentTerm(message.getTerm());
+              replica.setLeaderAddress(message.getFullAddress());
 
-                // Reset candidate stats
-                replica.setCandidateAddress(null);
-
-                // Append new leader
-                replica.setCurrentTerm(message.getTerm());
-                replica.setLeaderAddress(message.getFullAddress());
-
-                // Reset role
-                replica.setCurrentRole(ConsensusRole.FOLLOWER);
-
-                continue;
-              }
-
-              if (replica.getLeaderAddress().equals(message.getFullAddress()) == true) {
-                // Same leader
-
-                // Reset timeout
-                replica.newTimeout();
-
-                // Reset role
-                replica.setCurrentRole(ConsensusRole.FOLLOWER);
-              }
+              // Reset role
+              replica.setCurrentRole(ConsensusRole.FOLLOWER);
               break;
           }
         } catch (ClassNotFoundException | IOException e) {
@@ -150,7 +133,7 @@ public enum ConsensusRole implements ConsensusHandlerInterface {
           voting.terminate();
           break;
         }
-        
+
         if (t.isAlive() == false) {
           // Timeout expired
           break;

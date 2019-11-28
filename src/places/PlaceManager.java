@@ -148,8 +148,8 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
   @Override
   public String toString() {
     return "\nRole: " + this.getCurrentRole() + "\nTerm: " + this.getCurrentTerm()
-        + "\nReplica FullAddress: " + this.getLocalAddress().toString()
-        + "\nLeader FullAddress: " + (this.getLeaderAddress() == null ? "null" : this.getLeaderAddress().toString());
+        + "\nReplica FullAddress: " + this.getLocalAddress().toString() + "\nLeader FullAddress: "
+        + (this.getLeaderAddress() == null ? "null" : this.getLeaderAddress().toString());
   }
 
 
@@ -299,8 +299,7 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
    * 
    */
   @Override
-  public void sendMessage(FullAddress fullAddress, ComunicationMessage message)
-      throws IOException {
+  public void sendMessage(FullAddress fullAddress, ComunicationMessage message) throws IOException {
     InetAddress host = InetAddress.getByName(fullAddress.getAddress());
     DatagramSocket socket = new DatagramSocket();
 

@@ -51,6 +51,18 @@ public class FullAddress implements Serializable {
   }
 
   /*
+   * hashCode
+   */
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((address == null) ? 0 : address.hashCode());
+    result = prime * result + ((port == null) ? 0 : port.hashCode());
+    return result;
+  }
+
+  /*
    * Equals
    */
   @Override
