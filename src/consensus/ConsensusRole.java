@@ -97,6 +97,9 @@ public enum ConsensusRole implements ConsensusHandlerInterface {
               // Reset role
               replica.setCurrentRole(ConsensusRole.FOLLOWER);
               break;
+            default:
+              /* Intentionally empty. Can be used to error handling */
+              continue;
           }
         } catch (ClassNotFoundException | IOException e) {
           System.out.println(e.getMessage());
