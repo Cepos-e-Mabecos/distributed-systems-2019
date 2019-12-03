@@ -39,4 +39,12 @@ public class Place implements Serializable {
   public void setLocality(String locality) {
     this.locality = locality;
   }
+
+  /*
+   * String toString
+   */
+  @Override
+  public String toString() {
+    return this.getPostalCode() + "," + this.getLocality();
+  }
 }
