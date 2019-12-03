@@ -1,6 +1,8 @@
 package comunication;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import places.Place;
 
 public class ComunicationMessage implements Serializable {
 
@@ -15,15 +17,23 @@ public class ComunicationMessage implements Serializable {
   private String message;
   private Integer term;
   private FullAddress fullAddress;
+  private ArrayList<Place> places;
 
   /*
-   * Follower Constructor
+   * Constructors
    */
 
   public ComunicationMessage(String message, Integer term, FullAddress fullAddress) {
     this.message = message;
     this.term = term;
     this.fullAddress = fullAddress;
+  }
+  
+  public ComunicationMessage(String message, Integer term, FullAddress fullAddress, ArrayList<Place> places) {
+    this.message = message;
+    this.term = term;
+    this.fullAddress = fullAddress;
+    this.places = places;
   }
 
   /*
@@ -52,12 +62,20 @@ public class ComunicationMessage implements Serializable {
   public void setFullAddress(FullAddress fullAddress) {
     this.fullAddress = fullAddress;
   }
+  
+  public ArrayList<Place> getPlaces() {
+    return places;
+  }
+  
+  public void setPlaces(ArrayList<Place> places) {
+    this.places = places;
+  }
 
   /*
    * String toString
    */
   @Override
   public String toString() {
-    return this.getMessage() + "," + this.getTerm() + "," + this.getFullAddress();
+    return this.getMessage() + "," + this.getTerm() + "," + this.getFullAddress().toString();
   }
 }

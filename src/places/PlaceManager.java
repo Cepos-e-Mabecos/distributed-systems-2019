@@ -166,21 +166,12 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
   @Override
   public void addPlace(Place place) throws RemoteException {
     places.add(place);
-  }
-
-  /**
-   * This function can be called remotely to retrieve the class ArrayList of Place.
-   * 
-   * @return ArrayList This returns all Place.
-   * 
-   * @throws RemoteException When it fails to reach the host.
-   * 
-   * @see RemoteException
-   * 
-   */
-  @Override
-  public ArrayList<Place> allPlaces() throws RemoteException {
-    return places;
+    try {
+      this.sendMessage(this.getMulticastAddress(), new ComunicationMessage("LEADER",
+          this.getCurrentTerm(), this.getLocalAddress(), this.getAllPlaces()));
+    } catch (IOException e) {
+      System.out.println(e.getMessage());
+    }
   }
 
   /**
@@ -204,6 +195,36 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
       }
     }
     return null;
+  }
+
+  /**
+   * This function can be called remotely to retrieve the class ArrayList of Place.
+   * 
+   * @return ArrayList This returns all Place.
+   * 
+   * @throws RemoteException When it fails to reach the host.
+   * 
+   * @see RemoteException
+   * 
+   */
+  @Override
+  public ArrayList<Place> getAllPlaces() throws RemoteException {
+    return places;
+  }
+
+  /**
+   * This function can be called remotely to change the class ArrayList of Place.
+   * 
+   * @param places Contains ArrayList with all Place.
+   * 
+   * @throws RemoteException When it fails to reach the host.
+   * 
+   * @see RemoteException
+   * 
+   */
+  @Override
+  public void setAllPlaces(ArrayList<Place> places) throws RemoteException {
+    this.places = places;
   }
 
   /**

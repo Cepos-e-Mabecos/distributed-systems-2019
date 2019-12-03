@@ -39,7 +39,7 @@ public class Place implements Serializable {
   public void setLocality(String locality) {
     this.locality = locality;
   }
-
+  
   /*
    * String toString
    */

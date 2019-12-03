@@ -40,14 +40,11 @@ public enum ConsensusRole implements ConsensusHandlerInterface {
               if (replica.getCurrentTerm() < message.getTerm()) {
                 // New candidate with higher term
 
-
-                // Reset leader starts
-                replica.setLeaderAddress(null);
-
                 // Append new candidate
                 replica.setCandidateAddress(message.getFullAddress());
 
-                // Don't update timeout
+                // Update timeout
+                replica.newTimeout();
 
                 // Send vote
                 replica.sendMessage(replica.getMulticastAddress(),
@@ -77,6 +74,11 @@ public enum ConsensusRole implements ConsensusHandlerInterface {
                 replica.setCurrentTerm(message.getTerm());
                 replica.setLeaderAddress(message.getFullAddress());
 
+                // Appends new places if exits
+                if (message.getPlaces() != null) {
+                  replica.setAllPlaces(message.getPlaces());
+                }
+
                 // Reset role
                 replica.setCurrentRole(ConsensusRole.FOLLOWER);
 
@@ -84,18 +86,28 @@ public enum ConsensusRole implements ConsensusHandlerInterface {
               }
 
               // My term is the same
-              // Reset timeout
-              replica.newTimeout();
+              if (replica.getLeaderAddress().equals(message.getFullAddress()) == true) {
+                // It's my leader
+                // Reset timeout
+                replica.newTimeout();
 
-              // Reset candidate stats
-              replica.setCandidateAddress(null);
+                // Reset candidate stats
+                replica.setCandidateAddress(null);
 
-              // Append new leader
-              replica.setCurrentTerm(message.getTerm());
-              replica.setLeaderAddress(message.getFullAddress());
+                // Append new leader
+                replica.setCurrentTerm(message.getTerm());
+                replica.setLeaderAddress(message.getFullAddress());
 
-              // Reset role
-              replica.setCurrentRole(ConsensusRole.FOLLOWER);
+                // Appends new places if exits
+                if (message.getPlaces() != null) {
+                  replica.setAllPlaces(message.getPlaces());
+                }
+
+                // Reset role
+                replica.setCurrentRole(ConsensusRole.FOLLOWER);
+              }
+              
+              // Not my leader
               break;
             default:
               /* Intentionally empty. Can be used to error handling */
