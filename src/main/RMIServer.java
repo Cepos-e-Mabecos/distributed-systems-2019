@@ -1,12 +1,11 @@
 package main;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
-import comunication.ComunicationMessage;
+import comunication.ComunicationHeartbeat;
 import comunication.FullAddress;
 import places.PlaceManager;
 
@@ -15,10 +14,10 @@ public class RMIServer {
 
     String multicastAddress = args[0];
     Integer multicastPort = Integer.parseInt(args[1]);
-    Integer thisReplicaPort = Integer.parseInt(args[2]);
+    String thisReplicaAddress = args[2];
+    Integer thisReplicaPort = Integer.parseInt(args[3]);
 
-    PlaceManager placeList = startRMIServer(multicastAddress, multicastPort,
-        InetAddress.getLocalHost().getHostAddress(), thisReplicaPort);
+    PlaceManager placeList = startRMIServer(multicastAddress, multicastPort, thisReplicaAddress, thisReplicaPort);
 
     Integer multicastTimeout = 3000;
 
@@ -28,7 +27,7 @@ public class RMIServer {
         while (true) {
           // Sends current state to multicast
           try {
-            placeList.sendMessage(placeList.getMulticastAddress(), new ComunicationMessage("IP",
+            placeList.sendMessage(placeList.getMulticastAddress(), new ComunicationHeartbeat("IP",
                 placeList.getCurrentTerm(), placeList.getLocalAddress()));
           } catch (IOException e) {
             System.out.println(e.getMessage());
@@ -50,9 +49,9 @@ public class RMIServer {
         // Listens to other replicas messages in Multicast
         while (true) {
           try {
-            ComunicationMessage response =
+            ComunicationHeartbeat response =
                 placeList.listenMulticastMessage(placeList.getMulticastAddress());
-            if (response.getMessage().equals("IP")) {
+            if (response.getMessage().equals("IP") == true) {
               placeList.addReplica(response.getFullAddress());
             }
           } catch (IOException | ClassNotFoundException e) {
@@ -62,11 +61,17 @@ public class RMIServer {
       }
     }.start();
 
-    // Handles removing all old replicas every 2xtimeout second
+    // Handles removing all old replicas of 2xtimeout second
     new Thread() {
       public void run() {
         while (true) {
           placeList.cleanUpReplicas(2 * multicastTimeout);
+          
+          try {
+            Thread.sleep(multicastTimeout);
+          } catch (InterruptedException e) {
+            System.out.println(e.getMessage());
+          }
         }
       }
     }.start();

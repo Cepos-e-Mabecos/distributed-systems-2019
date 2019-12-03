@@ -1,3 +1,24 @@
+/*
+ * MIT License
+ * 
+ * Copyright (c) 2019 Cepos e Mabecos
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+ * associated documentation files (the "Software"), to deal in the Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge, publish, distribute,
+ * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all copies or
+ * substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+ * NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 package places;
 
 import java.io.ByteArrayInputStream;
@@ -18,18 +39,24 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import comunication.ComunicationInterface;
-import comunication.ComunicationMessage;
+import comunication.ComunicationHeartbeat;
 import comunication.FullAddress;
 import consensus.ConsensusHandlerInterface;
 import consensus.ConsensusRole;
 
+/**
+ * This is the core
+ * 
+ * @author <a href="https://brenosalles.com" target="_blank">Breno</a>
+ *
+ * @since 1.0
+ * @version 1.4
+ * 
+ */
 public class PlaceManager extends UnicastRemoteObject implements PlacesListInterface,
     ReplicasManagerInterface, ComunicationInterface, ConsensusHandlerInterface {
+  private static final long serialVersionUID = 3401280478997971431L;
 
-  /**
-   * 
-   */
-  private static final long serialVersionUID = 4883086976774125339L;
   /*
    * PlaceManager Attributes
    */
@@ -77,7 +104,6 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
   /*
    * Getters & Setters
    */
-
   public synchronized FullAddress getMulticastAddress() {
     return multicastAddress;
   }
@@ -160,14 +186,12 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
    * 
    * @throws RemoteException When it fails to reach the the host.
    * 
-   * @see RemoteException
-   * 
    */
   @Override
   public void addPlace(Place place) throws RemoteException {
     places.add(place);
     try {
-      this.sendMessage(this.getMulticastAddress(), new ComunicationMessage("LEADER",
+      this.sendMessage(this.getMulticastAddress(), new ComunicationHeartbeat("LEADER",
           this.getCurrentTerm(), this.getLocalAddress(), this.getAllPlaces()));
     } catch (IOException e) {
       System.out.println(e.getMessage());
@@ -183,8 +207,6 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
    * @return Place This returns the corresponding Place.
    * 
    * @throws RemoteException When it fails to reach the host.
-   * 
-   * @see RemoteException
    * 
    */
   @Override
@@ -204,8 +226,6 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
    * 
    * @throws RemoteException When it fails to reach the host.
    * 
-   * @see RemoteException
-   * 
    */
   @Override
   public ArrayList<Place> getAllPlaces() throws RemoteException {
@@ -218,8 +238,6 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
    * @param places Contains ArrayList with all Place.
    * 
    * @throws RemoteException When it fails to reach the host.
-   * 
-   * @see RemoteException
    * 
    */
   @Override
@@ -235,8 +253,8 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
    * 
    */
   @Override
-  public synchronized void addReplica(FullAddress replicaAddress) {
-    replicas.replace(replicaAddress, new Date());
+  public void addReplica(FullAddress replicaAddress) {
+    replicas.put(replicaAddress, new Date());
   }
 
   /**
@@ -247,7 +265,7 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
    * 
    */
   @Override
-  public synchronized void removeReplica(FullAddress replicaAddress) {
+  public void removeReplica(FullAddress replicaAddress) {
     replicas.remove(replicaAddress);
   }
 
@@ -259,7 +277,7 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
    * 
    */
   @Override
-  public synchronized void addAllReplicas(ConcurrentHashMap<FullAddress, Date> replicas) {
+  public void addAllReplicas(ConcurrentHashMap<FullAddress, Date> replicas) {
     this.replicas = replicas;
   }
 
@@ -269,7 +287,7 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
    * 
    */
   @Override
-  public synchronized void removeAllReplicas() {
+  public void removeAllReplicas() {
     replicas.clear();
   }
 
@@ -282,7 +300,7 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
    * 
    */
   @Override
-  public synchronized void cleanUpReplicas(Integer maximumReplicaAge) {
+  public void cleanUpReplicas(Integer maximumReplicaAge) {
     ConcurrentHashMap<FullAddress, Date> replicas = this.getAllReplicas();
     Iterator<Entry<FullAddress, Date>> it = replicas.entrySet().iterator();
 
@@ -303,7 +321,7 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
    * 
    */
   @Override
-  public synchronized ConcurrentHashMap<FullAddress, Date> getAllReplicas() {
+  public ConcurrentHashMap<FullAddress, Date> getAllReplicas() {
     return replicas;
   }
 
@@ -316,11 +334,10 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
    * 
    * @throws IOException On Input or Output error.
    * 
-   * @see IOException
-   * 
    */
   @Override
-  public void sendMessage(FullAddress fullAddress, ComunicationMessage message) throws IOException {
+  public void sendMessage(FullAddress fullAddress, ComunicationHeartbeat message)
+      throws IOException {
     InetAddress host = InetAddress.getByName(fullAddress.getAddress());
     DatagramSocket socket = new DatagramSocket();
 
@@ -350,11 +367,9 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
    * 
    * @throws ClassNotFoundException When reading a class outputs error.
    * 
-   * @see IOException
-   * 
    */
   @Override
-  public ComunicationMessage listenMulticastMessage(FullAddress fullAddress)
+  public ComunicationHeartbeat listenMulticastMessage(FullAddress fullAddress)
       throws IOException, ClassNotFoundException {
     // Joins multicast socket
     MulticastSocket mSocket = new MulticastSocket(fullAddress.getPort());
@@ -372,7 +387,7 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
     ByteArrayInputStream bais = new ByteArrayInputStream(buffer);
     ObjectInputStream ois = new ObjectInputStream(bais);
 
-    ComunicationMessage message = (ComunicationMessage) ois.readObject();
+    ComunicationHeartbeat message = (ComunicationHeartbeat) ois.readObject();
 
     // Closes socket
     mSocket.close();
@@ -388,8 +403,6 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
    * @return String This returns the message that was sent to the host.
    * 
    * @throws IOException On Input or Output error.
-   * 
-   * @see IOException
    * 
    */
   @Override
@@ -415,8 +428,6 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
    * 
    * @param replica Contains replica to be managed.
    * 
-   * @see ConsensusRole
-   * 
    */
   @Override
   public void handler(PlaceManager replica) {
@@ -424,11 +435,16 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
   }
 
   /**
-   * This function is used to generate a new Timeout on this PlaceManager server.
+   * This function is used to generate a new Timeout on this PlaceManager server. It will generate a
+   * random time between min and max.
+   * 
+   * @param min Contains Integer with min value (in milliseconds)
+   * 
+   * @param max Contains Integer with max value (in milliseconds)
    * 
    */
-  public void newTimeout() {
+  public void newTimeout(Integer min, Integer max) {
     this.setLastTime(System.nanoTime());
-    this.setCurrentTimeout((long) (Math.random() * 5000 + 5000) * 1000000);
+    this.setCurrentTimeout((long) (Math.random() * min + max - min) * 1000000);
   }
 }
