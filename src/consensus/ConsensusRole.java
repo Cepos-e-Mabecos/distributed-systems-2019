@@ -56,12 +56,12 @@ public enum ConsensusRole implements ConsensusHandlerInterface {
               // We received a vote request
               if (replica.getCurrentTerm() > message.getTerm()) {
                 // My term is higher, ignore
-                return;
+                continue;
               }
 
               if (replica.getCandidateAddress() != null) {
                 // Already voted for a candidate
-                return;
+                continue;
               }
 
               if (replica.getCurrentTerm() < message.getTerm()) {
@@ -82,7 +82,7 @@ public enum ConsensusRole implements ConsensusHandlerInterface {
 
               if (replica.getCurrentTerm() > message.getTerm()) {
                 // My term is higher, not my leader
-                return;
+                continue;
               }
 
               if (replica.getCurrentTerm() < message.getTerm()) {
@@ -108,7 +108,7 @@ public enum ConsensusRole implements ConsensusHandlerInterface {
                 // Reset role
                 replica.setCurrentRole(ConsensusRole.FOLLOWER);
 
-                return;
+                continue;
               }
 
               // My term is the same
@@ -134,7 +134,7 @@ public enum ConsensusRole implements ConsensusHandlerInterface {
               break;
             default:
               /* Intentionally empty. Can be used to error handling */
-              return;
+              continue;
           }
         } catch (ClassNotFoundException | IOException e) {
           System.out.println(e.getMessage());
