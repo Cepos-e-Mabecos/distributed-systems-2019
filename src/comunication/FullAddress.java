@@ -77,22 +77,22 @@ public class FullAddress implements Serializable {
 
     FullAddress casted = (FullAddress) obj;
     if (this.address == null) {
-      if (casted.getAddress() != null) {
+      if (casted.address != null) {
         return false;
       }
     }
 
     if (this.port == null) {
-      if (casted.getPort() != null) {
+      if (casted.port != null) {
         return false;
       }
     }
 
-    if (this.address.equals(casted.getAddress()) == false) {
+    if (this.address.equals(casted.address) == false) {
       return false;
     }
 
-    if (this.port.equals(casted.getPort()) == false) {
+    if (this.port == casted.port) {
       return false;
     }
     return true;

@@ -16,18 +16,7 @@ public interface PlacesListInterface extends Remote {
    * 
    */
   void addPlace(Place place) throws RemoteException;
-
-  /**
-   * This function should be called remotely to retrieve the class ArrayList of Place.
-   * 
-   * @return ArrayList This returns all Place.
-   * 
-   * @throws RemoteException When it fails to reach the host.
-   * 
-   * @see RemoteException
-   * 
-   */
-  ArrayList<Place> allPlaces() throws RemoteException;
+  
 
   /**
    * This function should be called remotely to retrieve a specific Place from the class ArrayList of
@@ -43,4 +32,28 @@ public interface PlacesListInterface extends Remote {
    * 
    */
   Place getPlace(String postalCode) throws RemoteException;
+
+  /**
+   * This function should be called remotely to retrieve the class ArrayList of Place.
+   * 
+   * @return ArrayList This returns all Place.
+   * 
+   * @throws RemoteException When it fails to reach the host.
+   * 
+   * @see RemoteException
+   * 
+   */
+  ArrayList<Place> getAllPlaces() throws RemoteException;
+
+  /**
+   * This function should be called remotely to change the class ArrayList of Place.
+   * 
+   * @param places Contains ArrayList with all Place.
+   * 
+   * @throws RemoteException When it fails to reach the host.
+   * 
+   * @see RemoteException
+   * 
+   */
+  void setAllPlaces(ArrayList<Place> places) throws RemoteException;
 }
