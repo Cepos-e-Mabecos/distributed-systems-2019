@@ -1,12 +1,38 @@
+/*
+ * MIT License
+ * 
+ * Copyright (c) 2019 Cepos e Mabecos
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+ * associated documentation files (the "Software"), to deal in the Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge, publish, distribute,
+ * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all copies or
+ * substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+ * NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 package consensus;
 
 import java.io.IOException;
-import java.util.Date;
-import java.util.concurrent.ConcurrentHashMap;
-import comunication.ComunicationMessage;
-import comunication.FullAddress;
+import comunication.ComunicationHeartbeat;
 import places.PlaceManager;
 
+/**
+ * 
+ * @author <a href="https://brenosalles.com" target="_blank">Breno</a>
+ *
+ * @since 1.0
+ * @version 1.3
+ * 
+ */
 public enum ConsensusRole implements ConsensusHandlerInterface {
   FOLLOWER {
     /*
@@ -21,7 +47,8 @@ public enum ConsensusRole implements ConsensusHandlerInterface {
         }
 
         try {
-          ComunicationMessage message =
+          // Gets a message
+          ComunicationHeartbeat message =
               replica.listenMulticastMessage(replica.getMulticastAddress());
 
           switch (message.getMessage()) {
@@ -43,12 +70,9 @@ public enum ConsensusRole implements ConsensusHandlerInterface {
                 // Append new candidate
                 replica.setCandidateAddress(message.getFullAddress());
 
-                // Update timeout
-                replica.newTimeout();
-
                 // Send vote
                 replica.sendMessage(replica.getMulticastAddress(),
-                    new ComunicationMessage("VOTE", message.getTerm(), message.getFullAddress()));
+                    new ComunicationHeartbeat("VOTE", null, message.getFullAddress()));
               }
 
               // Don't vote when candidate is same term as my leader
@@ -65,7 +89,7 @@ public enum ConsensusRole implements ConsensusHandlerInterface {
                 // New leader with higher term
 
                 // Reset timeout
-                replica.newTimeout();
+                replica.newTimeout(5000, 5000);
 
                 // Reset candidate stats
                 replica.setCandidateAddress(null);
@@ -78,6 +102,8 @@ public enum ConsensusRole implements ConsensusHandlerInterface {
                 if (message.getPlaces() != null) {
                   replica.setAllPlaces(message.getPlaces());
                 }
+
+                System.out.println(replica.getLeaderAddress());
 
                 // Reset role
                 replica.setCurrentRole(ConsensusRole.FOLLOWER);
@@ -89,10 +115,7 @@ public enum ConsensusRole implements ConsensusHandlerInterface {
               if (replica.getLeaderAddress().equals(message.getFullAddress()) == true) {
                 // It's my leader
                 // Reset timeout
-                replica.newTimeout();
-
-                // Reset candidate stats
-                replica.setCandidateAddress(null);
+                replica.newTimeout(5000, 5000);
 
                 // Append new leader
                 replica.setCurrentTerm(message.getTerm());
@@ -106,7 +129,7 @@ public enum ConsensusRole implements ConsensusHandlerInterface {
                 // Reset role
                 replica.setCurrentRole(ConsensusRole.FOLLOWER);
               }
-              
+
               // Not my leader
               break;
             default:
@@ -134,17 +157,16 @@ public enum ConsensusRole implements ConsensusHandlerInterface {
     public void handler(PlaceManager replica) {
       // Votes for himself
       Integer numberVotes = 1;
+      Integer size = replica.getAllReplicas().size();
 
-      replica.newTimeout();
+      replica.newTimeout(2500, 5000);
       ConsensusVoting voting = new ConsensusVoting(replica);
       Thread t = new Thread(voting);
       t.start();
 
-      ConcurrentHashMap<FullAddress, Date> replicas = replica.getAllReplicas();
-
       // Happens while voting timeout is active
       while (true) {
-        if (numberVotes > (replicas.size() / 2) == true) {
+        if (numberVotes > (size / 2) == true) {
           voting.terminate();
           break;
         }
@@ -155,13 +177,17 @@ public enum ConsensusRole implements ConsensusHandlerInterface {
         }
         try {
           // Listens for messages
-          ComunicationMessage response =
+          ComunicationHeartbeat response =
               replica.listenMulticastMessage(replica.getMulticastAddress());
           if (response.getMessage().equals("LEADER") == true) {
             // ANOTHER LEADER, STEP DOWN
+            voting.terminate();
+            t.join();
             // Back to follower
-            replica.newTimeout();
+            replica.newTimeout(5000, 10000);
             replica.setCandidateAddress(null);
+            replica.setCurrentTerm(response.getTerm());
+            replica.setLeaderAddress(response.getFullAddress());
             replica.setCurrentRole(ConsensusRole.FOLLOWER);
             return;
           }
@@ -178,7 +204,7 @@ public enum ConsensusRole implements ConsensusHandlerInterface {
 
           // My VOTE!
           numberVotes++;
-        } catch (IOException | ClassNotFoundException e) {
+        } catch (IOException | ClassNotFoundException | InterruptedException e) {
           System.out.println(e.getMessage());
         }
       }
@@ -188,7 +214,7 @@ public enum ConsensusRole implements ConsensusHandlerInterface {
       } catch (InterruptedException e) {
         System.out.println(e.getMessage());
       }
-      if (numberVotes > (replicas.size() / 2) == true) {
+      if (numberVotes > (size / 2) == true) {
         // I'm a new leader
         replica.setCandidateAddress(null);
         replica.setLeaderAddress(replica.getLocalAddress());
@@ -196,7 +222,7 @@ public enum ConsensusRole implements ConsensusHandlerInterface {
         replica.setCurrentRole(ConsensusRole.LEADER);
       } else {
         // Back to follower
-        replica.newTimeout();
+        replica.newTimeout(5000, 5000);
         replica.setCandidateAddress(null);
         replica.setCurrentRole(ConsensusRole.FOLLOWER);
       }
@@ -210,9 +236,9 @@ public enum ConsensusRole implements ConsensusHandlerInterface {
     @Override
     public void handler(PlaceManager replica) {
       try {
-        replica.sendMessage(replica.getMulticastAddress(),
-            new ComunicationMessage("LEADER", replica.getCurrentTerm(), replica.getLocalAddress()));
-        Thread.sleep(3000);
+        replica.sendMessage(replica.getMulticastAddress(), new ComunicationHeartbeat("LEADER",
+            replica.getCurrentTerm(), replica.getLocalAddress()));
+        Thread.sleep(1000);
       } catch (IOException | InterruptedException e) {
         System.out.println(e.getMessage());
       }
