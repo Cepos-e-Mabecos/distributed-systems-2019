@@ -40,112 +40,109 @@ public enum ConsensusRole implements ConsensusHandlerInterface {
      */
     @Override
     public void handler(PlaceManager replica) {
-      while (true) {
-        if (System.nanoTime() - replica.getLastTime() > replica.getCurrentTimeout()) {
-          // Timeout expired
-          break;
-        }
-
-        try {
-          // Gets a message
-          ComunicationHeartbeat message =
-              replica.listenMulticastMessage(replica.getMulticastAddress());
-
-          switch (message.getMessage()) {
-            case "CANDIDATE":
-              // We received a vote request
-              if (replica.getCurrentTerm() > message.getTerm()) {
-                // My term is higher, ignore
-                continue;
-              }
-
-              if (replica.getCandidateAddress() != null) {
-                // Already voted for a candidate
-                continue;
-              }
-
-              if (replica.getCurrentTerm() < message.getTerm()) {
-                // New candidate with higher term
-
-                // Append new candidate
-                replica.setCandidateAddress(message.getFullAddress());
-
-                // Send vote
-                replica.sendMessage(replica.getMulticastAddress(),
-                    new ComunicationHeartbeat("VOTE", null, message.getFullAddress()));
-              }
-
-              // Don't vote when candidate is same term as my leader
-              break;
-            case "LEADER":
-              // We received a leader heartbeat
-
-              if (replica.getCurrentTerm() > message.getTerm()) {
-                // My term is higher, not my leader
-                continue;
-              }
-
-              if (replica.getCurrentTerm() < message.getTerm()) {
-                // New leader with higher term
-
-                // Reset timeout
-                replica.newTimeout(5000, 5000);
-
-                // Reset candidate stats
-                replica.setCandidateAddress(null);
-
-                // Append new leader
-                replica.setCurrentTerm(message.getTerm());
-                replica.setLeaderAddress(message.getFullAddress());
-
-                // Appends new places if exits
-                if (message.getPlaces() != null) {
-                  replica.setAllPlaces(message.getPlaces());
-                }
-
-                System.out.println(replica.getLeaderAddress());
-
-                // Reset role
-                replica.setCurrentRole(ConsensusRole.FOLLOWER);
-
-                continue;
-              }
-
-              // My term is the same
-              if (replica.getLeaderAddress().equals(message.getFullAddress()) == true) {
-                // It's my leader
-                // Reset timeout
-                replica.newTimeout(5000, 5000);
-
-                // Append new leader
-                replica.setCurrentTerm(message.getTerm());
-                replica.setLeaderAddress(message.getFullAddress());
-
-                // Appends new places if exits
-                if (message.getPlaces() != null) {
-                  replica.setAllPlaces(message.getPlaces());
-                }
-
-                // Reset role
-                replica.setCurrentRole(ConsensusRole.FOLLOWER);
-              }
-
-              // Not my leader
-              break;
-            default:
-              /* Intentionally empty. Can be used to error handling */
-              continue;
-          }
-        } catch (ClassNotFoundException | IOException e) {
-          System.out.println(e.getMessage());
-        }
+      if (System.nanoTime() - replica.getLastTime() > replica.getCurrentTimeout()) {
+        // Timeout expired
+        // Become candidate
+        replica.setLeaderAddress(null);
+        replica.setCandidateAddress(null);
+        replica.setCurrentRole(ConsensusRole.CANDIDATE);
+        System.out.println(replica);
+        return;
       }
 
-      // Become candidate
-      replica.setLeaderAddress(null);
-      replica.setCandidateAddress(null);
-      replica.setCurrentRole(ConsensusRole.CANDIDATE);
-      System.out.println(replica);
+      try {
+        // Gets a message
+        ComunicationHeartbeat message =
+            replica.listenMulticastMessage(replica.getMulticastAddress());
+
+        switch (message.getMessage()) {
+          case "CANDIDATE":
+            // We received a vote request
+            if (replica.getCurrentTerm() > message.getTerm()) {
+              // My term is higher, ignore
+              return;
+            }
+
+            if (replica.getCandidateAddress() != null) {
+              // Already voted for a candidate
+              return;
+            }
+
+            if (replica.getCurrentTerm() < message.getTerm()) {
+              // New candidate with higher term
+
+              // Append new candidate
+              replica.setCandidateAddress(message.getFullAddress());
+
+              // Send vote
+              replica.sendMessage(replica.getMulticastAddress(),
+                  new ComunicationHeartbeat("VOTE", null, message.getFullAddress()));
+            }
+
+            // Don't vote when candidate is same term as my leader
+            break;
+          case "LEADER":
+            // We received a leader heartbeat
+
+            if (replica.getCurrentTerm() > message.getTerm()) {
+              // My term is higher, not my leader
+              return;
+            }
+
+            if (replica.getCurrentTerm() < message.getTerm()) {
+              // New leader with higher term
+
+              // Reset timeout
+              replica.newTimeout(5000, 5000);
+
+              // Reset candidate stats
+              replica.setCandidateAddress(null);
+
+              // Append new leader
+              replica.setCurrentTerm(message.getTerm());
+              replica.setLeaderAddress(message.getFullAddress());
+
+              // Appends new places if exits
+              if (message.getPlaces() != null) {
+                replica.setAllPlaces(message.getPlaces());
+              }
+
+              System.out.println(replica.getLeaderAddress());
+
+              // Reset role
+              replica.setCurrentRole(ConsensusRole.FOLLOWER);
+
+              return;
+            }
+
+            // My term is the same
+            if (replica.getLeaderAddress().equals(message.getFullAddress()) == true) {
+              // It's my leader
+              // Reset timeout
+              replica.newTimeout(5000, 5000);
+
+              // Append new leader
+              replica.setCurrentTerm(message.getTerm());
+              replica.setLeaderAddress(message.getFullAddress());
+
+              // Appends new places if exits
+              if (message.getPlaces() != null) {
+                replica.setAllPlaces(message.getPlaces());
+              }
+
+              // Reset role
+              replica.setCurrentRole(ConsensusRole.FOLLOWER);
+            }
+
+            // Not my leader
+            break;
+          default:
+            /* Intentionally empty. Can be used to error handling */
+            return;
+        }
+      } catch (ClassNotFoundException | IOException e) {
+        System.out.println(e.getMessage());
+      }
     }
   },
 
