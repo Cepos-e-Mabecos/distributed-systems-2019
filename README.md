@@ -9,6 +9,7 @@ This repository contains our practical project for the class of distributed syst
 ## Status
 [![Build Status](https://travis-ci.com/Cepos-e-Mabecos/distributed-systems-2019.svg?branch=master)](https://travis-ci.com/Cepos-e-Mabecos/distributed-systems-2019)
 [![CodeFactor](https://www.codefactor.io/repository/github/cepos-e-mabecos/distributed-systems-2019/badge/master)](https://www.codefactor.io/repository/github/cepos-e-mabecos/distributed-systems-2019/overview/master)
+[![BCH compliance](https://bettercodehub.com/edge/badge/Cepos-e-Mabecos/distributed-systems-2019?branch=master)](https://bettercodehub.com/)
 ## Javadocs
 The website containing the Javadocs can be found [here](https://cepos-e-mabecos.github.io/distributed-systems-2019/).
 
