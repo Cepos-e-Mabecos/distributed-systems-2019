@@ -21,14 +21,22 @@
 
 package comunication;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.MulticastSocket;
 
 /**
  * 
  * @author <a href="https://brenosalles.com" target="_blank">Breno</a>
  *
  * @since 1.0
- * @version 1.2
+ * @version 1.3
  * 
  */
 public interface ComunicationInterface {
@@ -37,12 +45,30 @@ public interface ComunicationInterface {
    * 
    * @param fullAddress Contains FullAddress with address of the host.
    * 
-   * @param message Contains ComunicationMessage with message to be send to the host.
+   * @param message Contains message to be send.
    * 
    * @throws IOException On Input or Output error.
    * 
    */
-  void sendMessage(FullAddress fullAddress, ComunicationHeartbeat message) throws IOException;
+  static void sendMessage(FullAddress fullAddress, ComunicationHeartbeat message)
+      throws IOException {
+    DatagramSocket socket = new DatagramSocket();
+
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    ObjectOutputStream out = new ObjectOutputStream(baos);
+    out.writeObject(message);
+
+    // Transforms message in bytes
+    byte m[] = baos.toByteArray();
+
+    // Creates a datagram based on m[]
+    DatagramPacket datagram = new DatagramPacket(m, m.length,
+        InetAddress.getByName(fullAddress.getAddress()), fullAddress.getPort());
+
+    // Sends datagram
+    socket.send(datagram);
+    socket.close();
+  }
 
   /**
    * This function should be used to retrieve a Multicast Message of a given address and port.
@@ -56,8 +82,31 @@ public interface ComunicationInterface {
    * @throws ClassNotFoundException When reading a class outputs error.
    * 
    */
-  ComunicationHeartbeat listenMulticastMessage(FullAddress fullAddress)
-      throws IOException, ClassNotFoundException;
+  static ComunicationHeartbeat listenMulticastMessage(FullAddress fullAddress)
+      throws IOException, ClassNotFoundException {
+    // Joins multicast socket
+    MulticastSocket mSocket = new MulticastSocket(fullAddress.getPort());
+    InetAddress mcAddress = InetAddress.getByName(fullAddress.getAddress());
+
+    mSocket.setReuseAddress(true);
+    mSocket.joinGroup(mcAddress);
+
+    // Waits for new messages
+    byte[] buffer = new byte[1024];
+    DatagramPacket datagram = new DatagramPacket(buffer, buffer.length);
+
+    mSocket.receive(datagram);
+
+    ByteArrayInputStream bais = new ByteArrayInputStream(buffer);
+    ObjectInputStream ois = new ObjectInputStream(bais);
+
+    ComunicationHeartbeat message = (ComunicationHeartbeat) ois.readObject();
+
+    // Closes socket
+    mSocket.close();
+
+    return message;
+  }
 
   /**
    * This function should be used to retrieve an Unicast Message of a given port from the host.
@@ -69,5 +118,20 @@ public interface ComunicationInterface {
    * @throws IOException On Input or Output error.
    * 
    */
-  String listenUnicastMessage(Integer port) throws IOException;
+  default String listenUnicastMessage(Integer port) throws IOException {
+    // Creates a "listen" socket on given port
+    DatagramSocket socket = new DatagramSocket(port);
+
+    byte[] buffer = new byte[1024];
+    // Prepares datagram packet to be written on given buffer
+    DatagramPacket datagram = new DatagramPacket(buffer, buffer.length);
+
+    // Receives datagram
+    socket.receive(datagram);
+
+    // Closes socket
+    socket.close();
+
+    return new String(datagram.getData(), 0, datagram.getLength());
+  }
 }

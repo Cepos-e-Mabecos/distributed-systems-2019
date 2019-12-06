@@ -21,8 +21,6 @@
 
 package consensus;
 
-import java.io.IOException;
-import comunication.ComunicationHeartbeat;
 import places.PlaceManager;
 
 /**
@@ -30,7 +28,7 @@ import places.PlaceManager;
  * @author <a href="https://brenosalles.com" target="_blank">Breno</a>
  *
  * @since 1.2
- * @version 1.3
+ * @version 1.4
  * 
  */
 public class ConsensusVoting implements Runnable {
@@ -46,15 +44,9 @@ public class ConsensusVoting implements Runnable {
   }
 
   @Override
-  public void run() {// Announces as Candidate
-    try {
-      replica.sendMessage(replica.getMulticastAddress(), new ComunicationHeartbeat("CANDIDATE",
-          replica.getCurrentTerm() + 1, replica.getLocalAddress()));
-    } catch (IOException e) {
-      System.out.println(e.getMessage());
-    }
+  public void run() {
+    replica.newTimeout(2500, 5000);
     while (running == true) {
-
       if (System.nanoTime() - replica.getLastTime() > replica.getCurrentTimeout()) {
         this.terminate();
       }

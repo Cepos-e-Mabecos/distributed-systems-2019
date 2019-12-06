@@ -20,6 +20,7 @@
  */
 package consensus;
 
+import java.io.IOException;
 import places.PlaceManager;
 
 /**
@@ -27,7 +28,7 @@ import places.PlaceManager;
  * @author <a href="https://brenosalles.com" target="_blank">Breno</a>
  *
  * @since 1.1
- * @version 1.1
+ * @version 1.2
  * 
  */
 public interface ConsensusHandlerInterface {
@@ -36,6 +37,12 @@ public interface ConsensusHandlerInterface {
    * 
    * @param replica Contains PlaceManager to be handled.
    * 
+   * @throws IOException On Input or Output error.
+   * 
+   * @throws ClassNotFoundException When reading a class outputs error.
+   * 
+   * @throws InterruptedException When it fails to wait for the thread.
+   * 
    */
-  void handler(PlaceManager replica);
+  void handler(PlaceManager replica) throws ClassNotFoundException, IOException, InterruptedException;
 }
