@@ -21,27 +21,19 @@
 
 package places;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.MulticastSocket;
 import java.net.UnknownHostException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
-import comunication.ComunicationInterface;
 import comunication.ComunicationHeartbeat;
+import comunication.ComunicationInterface;
 import comunication.FullAddress;
-import consensus.ConsensusHandlerInterface;
 import consensus.ConsensusRole;
 
 /**
@@ -50,16 +42,17 @@ import consensus.ConsensusRole;
  * @author <a href="https://brenosalles.com" target="_blank">Breno</a>
  *
  * @since 1.0
- * @version 1.4
+ * @version 1.5
  * 
  */
-public class PlaceManager extends UnicastRemoteObject implements PlacesListInterface,
-    ReplicasManagerInterface, ComunicationInterface, ConsensusHandlerInterface {
+public class PlaceManager extends UnicastRemoteObject
+    implements PlacesListInterface, ReplicasManagerInterface {
   private static final long serialVersionUID = 3401280478997971431L;
 
   /*
    * PlaceManager Attributes
    */
+  private HashMap<Place, Integer> tempPlaces = new HashMap<Place, Integer>();
   private ArrayList<Place> places = new ArrayList<Place>();
   private ConcurrentHashMap<FullAddress, Date> replicas =
       new ConcurrentHashMap<FullAddress, Date>();
@@ -71,12 +64,13 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
    */
   private ConsensusRole currentRole;
   private Integer currentTerm;
+  private final Integer multicastTimeout = 3000;
+  private Long lastTime;
+  private Long currentTimeout;
 
   /*
    * Follower Attributes
    */
-  private Long lastTime;
-  private Long currentTimeout;
   private FullAddress leaderAddress;
   private FullAddress candidateAddress;
 
@@ -168,6 +162,14 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
     this.candidateAddress = candidateAddress;
   }
 
+  public synchronized HashMap<Place, Integer> getTempPlaces() {
+    return this.tempPlaces;
+  }
+
+  public synchronized void setTempPlaces(HashMap<Place, Integer> tempPlaces) {
+    this.tempPlaces = tempPlaces;
+  }
+
   /*
    * String toString
    */
@@ -190,12 +192,6 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
   @Override
   public void addPlace(Place place) throws RemoteException {
     places.add(place);
-    try {
-      this.sendMessage(this.getMulticastAddress(), new ComunicationHeartbeat("LEADER",
-          this.getCurrentTerm(), this.getLocalAddress(), this.getAllPlaces()));
-    } catch (IOException e) {
-      System.out.println(e.getMessage());
-    }
   }
 
   /**
@@ -326,112 +322,108 @@ public class PlaceManager extends UnicastRemoteObject implements PlacesListInter
   }
 
   /**
-   * This function can be used to send an Unicast Message to a given host.
+   * This function is used to handle the behaviour of this PlaceManager server.
    * 
-   * @param fullAddress Contains FullAddress with address of the host.
-   * 
-   * @param message Contains string with message to be send to the host.
-   * 
-   * @throws IOException On Input or Output error.
-   * 
-   */
-  @Override
-  public void sendMessage(FullAddress fullAddress, ComunicationHeartbeat message)
-      throws IOException {
-    InetAddress host = InetAddress.getByName(fullAddress.getAddress());
-    DatagramSocket socket = new DatagramSocket();
-
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    ObjectOutputStream out = new ObjectOutputStream(baos);
-    out.writeObject(message);
-
-    // Transforms message in bytes
-    byte m[] = baos.toByteArray();
-
-    // Creates a datagram based on m[]
-    DatagramPacket datagram = new DatagramPacket(m, m.length, host, fullAddress.getPort());
-
-    // Sends datagram
-    socket.send(datagram);
-    socket.close();
-  }
-
-  /**
-   * This function can be used to retrieve a Multicast Message of a given address and port.
-   * 
-   * @param fullAddress Contains FullAddres with address and port to listen from.
-   * 
-   * @return ComunicationMessage This returns the message that was sent to the Multicast Group.
+   * @param replica Contains replica to be managed.
    * 
    * @throws IOException On Input or Output error.
    * 
    * @throws ClassNotFoundException When reading a class outputs error.
    * 
-   */
-  @Override
-  public ComunicationHeartbeat listenMulticastMessage(FullAddress fullAddress)
-      throws IOException, ClassNotFoundException {
-    // Joins multicast socket
-    MulticastSocket mSocket = new MulticastSocket(fullAddress.getPort());
-    InetAddress mcAddress = InetAddress.getByName(fullAddress.getAddress());
-
-    mSocket.setReuseAddress(true);
-    mSocket.joinGroup(mcAddress);
-
-    // Waits for new messages
-    byte[] buffer = new byte[1024];
-    DatagramPacket datagram = new DatagramPacket(buffer, buffer.length);
-
-    mSocket.receive(datagram);
-
-    ByteArrayInputStream bais = new ByteArrayInputStream(buffer);
-    ObjectInputStream ois = new ObjectInputStream(bais);
-
-    ComunicationHeartbeat message = (ComunicationHeartbeat) ois.readObject();
-
-    // Closes socket
-    mSocket.close();
-
-    return message;
-  }
-
-  /**
-   * This function can be used to retrieve an Unicast Message of a given port from the host.
-   * 
-   * @param port Contains Integer with port to listen from.
-   * 
-   * @return String This returns the message that was sent to the host.
-   * 
-   * @throws IOException On Input or Output error.
+   * @throws InterruptedException When it fails to wait for the thread.
    * 
    */
-  @Override
-  public String listenUnicastMessage(Integer port) throws IOException {
-    // Creates a "listen" socket on given port
-    DatagramSocket socket = new DatagramSocket(port);
-
-    byte[] buffer = new byte[1024];
-    // Prepares datagram packet to be written on given buffer
-    DatagramPacket datagram = new DatagramPacket(buffer, buffer.length);
-
-    // Receives datagram
-    socket.receive(datagram);
-
-    // Closes socket
-    socket.close();
-
-    return new String(datagram.getData(), 0, datagram.getLength());
-  }
-
-  /**
-   * This function is used to handle the behaviour of this PlaceManager server.
-   * 
-   * @param replica Contains replica to be managed.
-   * 
-   */
-  @Override
-  public void handler(PlaceManager replica) {
+  public void handler(PlaceManager replica)
+      throws ClassNotFoundException, IOException, InterruptedException {
     this.getCurrentRole().handler(replica);
+  }
+
+  /**
+   * This function is used to start this PlaceManager server.
+   */
+  public void start() {
+    // Handles sending all multicast messages
+    new Thread() {
+      public void run() {
+        while (true) {
+          // Sends current state to multicast
+          try {
+            switch (getCurrentRole()) {
+              case CANDIDATE:
+                ComunicationInterface.sendMessage(PlaceManager.this.getMulticastAddress(),
+                    new ComunicationHeartbeat(PlaceManager.this.getCurrentRole().toString(),
+                        PlaceManager.this.getCurrentTerm() + 1,
+                        PlaceManager.this.getLocalAddress()));
+                break;
+              case LEADER:
+                ComunicationInterface.sendMessage(PlaceManager.this.getMulticastAddress(),
+                    new ComunicationHeartbeat(PlaceManager.this.getCurrentRole().toString(),
+                        PlaceManager.this.getCurrentTerm(), PlaceManager.this.getLocalAddress(),
+                        PlaceManager.this.getAllPlaces()));
+                break;
+              default:
+                ComunicationInterface.sendMessage(PlaceManager.this.getMulticastAddress(),
+                    new ComunicationHeartbeat(PlaceManager.this.getCurrentRole().toString(),
+                        PlaceManager.this.getCurrentTerm(), PlaceManager.this.getLocalAddress()));
+            }
+          } catch (IOException e) {
+            System.out.println(e.getMessage());
+          }
+
+          System.out.println(PlaceManager.this);
+          // Holds for multicastTimeout seconds
+          try {
+            Thread.sleep(multicastTimeout);
+          } catch (InterruptedException e) {
+            System.out.println(e.getMessage());
+          }
+        }
+      }
+    }.start();
+
+    // Handles listening to multicast messages
+    new Thread() {
+      public void run() {
+        // Listens to other replicas messages in Multicast
+        while (true) {
+          try {
+            ComunicationHeartbeat message =
+                ComunicationInterface.listenMulticastMessage(getMulticastAddress());
+            addReplica(message.getFullAddress());
+          } catch (IOException | ClassNotFoundException e) {
+            System.out.println(e.getMessage());
+          }
+        }
+      }
+    }.start();
+
+    // Handles removing all old replicas of 2xtimeout second
+    new Thread() {
+      public void run() {
+        while (true) {
+          PlaceManager.this.cleanUpReplicas(2 * multicastTimeout);
+
+          try {
+            Thread.sleep(multicastTimeout);
+          } catch (InterruptedException e) {
+            System.out.println(e.getMessage());
+          }
+        }
+      }
+    }.start();
+
+    // Handles consensus
+    new Thread() {
+      public void run() {
+        while (true) {
+          try {
+            PlaceManager.this.handler(PlaceManager.this);
+          } catch (ClassNotFoundException | IOException | InterruptedException e) {
+            System.out.println(e.getMessage());
+          }
+        }
+      }
+    }.start();
   }
 
   /**
