@@ -49,7 +49,6 @@ public class RMIServer {
       throws RemoteException, UnknownHostException {
     Registry r = null;
     PlaceManager replica = null;
-
     try {
       System.out.println("Creating registry on port: " + thisReplicaPort);
       r = LocateRegistry.createRegistry(thisReplicaPort);
@@ -59,13 +58,10 @@ public class RMIServer {
       System.out.println("Getting registry on port: " + thisReplicaPort);
       r = LocateRegistry.getRegistry(thisReplicaPort);
     }
-
     replica =
         new PlaceManager(multicastAddress, multicastPort, thisReplicaAddress, thisReplicaPort);
     r.rebind("placelist", replica);
-
     System.out.println("PlaceManager running on port: " + thisReplicaPort);
-
     return replica;
   }
 }

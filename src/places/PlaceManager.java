@@ -397,7 +397,6 @@ public class PlaceManager extends UnicastRemoteObject
           } catch (IOException e) {
             System.out.println(e.getMessage());
           }
-
           System.out.println(PlaceManager.this);
           // Holds for multicastTimeout seconds
           try {
@@ -409,7 +408,6 @@ public class PlaceManager extends UnicastRemoteObject
       }
     }.start();
   }
-
 
   /**
    * This function is used to receive the state of other PlaceManager's
