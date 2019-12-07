@@ -25,7 +25,7 @@
 						<manifest>
 							<addClasspath>true</addClasspath>
 							<classpathPrefix>lib/</classpathPrefix>
-							<mainClass>main.RMIServer</mainClass>
+							<mainClass>RMIServer</mainClass>
 						</manifest>
 					</archive>
 				</configuration>

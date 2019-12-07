@@ -19,13 +19,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package main;
-
 import java.net.UnknownHostException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
-import comunication.FullAddress;
 import places.PlaceManager;
 
 /**
@@ -33,7 +30,7 @@ import places.PlaceManager;
  * @author <a href="https://brenosalles.com" target="_blank">Breno</a>
  *
  * @since 1.0
- * @version 1.4
+ * @version 1.5
  * 
  */
 public class RMIServer {
@@ -48,25 +45,26 @@ public class RMIServer {
   }
 
   private static PlaceManager startRMIServer(String multicastAddress, Integer multicastPort,
-      String serverAddress, Integer serverPort) throws RemoteException, UnknownHostException {
+      String thisReplicaAddress, Integer thisReplicaPort)
+      throws RemoteException, UnknownHostException {
     Registry r = null;
     PlaceManager replica = null;
 
     try {
-      System.out.println("Creating registry on port: " + serverPort);
-      r = LocateRegistry.createRegistry(serverPort);
+      System.out.println("Creating registry on port: " + thisReplicaPort);
+      r = LocateRegistry.createRegistry(thisReplicaPort);
     } catch (RemoteException a) {
-      System.out.println(serverPort + " is already used.");
+      System.out.println(thisReplicaPort + " is already used.");
     } finally {
-      System.out.println("Getting registry on port: " + serverPort);
-      r = LocateRegistry.getRegistry(serverPort);
+      System.out.println("Getting registry on port: " + thisReplicaPort);
+      r = LocateRegistry.getRegistry(thisReplicaPort);
     }
 
-    replica = new PlaceManager(new FullAddress(multicastAddress, multicastPort),
-        new FullAddress(serverAddress, serverPort));
+    replica =
+        new PlaceManager(multicastAddress, multicastPort, thisReplicaAddress, thisReplicaPort);
     r.rebind("placelist", replica);
 
-    System.out.println("PlaceManager running on port: " + serverPort);
+    System.out.println("PlaceManager running on port: " + thisReplicaPort);
 
     return replica;
   }
