@@ -42,7 +42,7 @@ import consensus.ConsensusRole;
  * @author <a href="https://brenosalles.com" target="_blank">Breno</a>
  *
  * @since 1.0
- * @version 1.5
+ * @version 1.6
  * 
  */
 public class PlaceManager extends UnicastRemoteObject
@@ -77,12 +77,12 @@ public class PlaceManager extends UnicastRemoteObject
   /*
    * Constructor
    */
-  public PlaceManager(FullAddress multicastAddress, FullAddress localAddress)
+  public PlaceManager(String multicastAddress, Integer multicastPort, String localAddress, Integer localPort)
       throws RemoteException, UnknownHostException {
     // PlaceManager
     super(0);
-    this.multicastAddress = multicastAddress;
-    this.localAddress = localAddress;
+    this.multicastAddress = new FullAddress(multicastAddress, multicastPort);
+    this.localAddress = new FullAddress(localAddress, localPort);
 
     // Consensus Server Attributes
     this.currentRole = ConsensusRole.FOLLOWER;
@@ -338,10 +338,38 @@ public class PlaceManager extends UnicastRemoteObject
     this.getCurrentRole().handler(replica);
   }
 
+
+  /**
+   * This function is used to generate a new Timeout on this PlaceManager server. It will generate a
+   * random time between min and max.
+   * 
+   * @param min Contains Integer with min value (in milliseconds)
+   * 
+   * @param max Contains Integer with max value (in milliseconds)
+   * 
+   */
+  public void newTimeout(Integer min, Integer max) {
+    this.setLastTime(System.nanoTime());
+    this.setCurrentTimeout((long) (Math.random() * min + max - min) * 1000000);
+  }
+
   /**
    * This function is used to start this PlaceManager server.
    */
   public void start() {
+    sendSelfMulticastMessage();
+
+    receiveOthersMulticastMessage();
+
+    removeOldReplicas();
+
+    consensusStart();
+  }
+
+  /**
+   * This function is used to send the current state of this PlaceManager
+   */
+  private void sendSelfMulticastMessage() {    
     // Handles sending all multicast messages
     new Thread() {
       public void run() {
@@ -369,7 +397,6 @@ public class PlaceManager extends UnicastRemoteObject
           } catch (IOException e) {
             System.out.println(e.getMessage());
           }
-
           System.out.println(PlaceManager.this);
           // Holds for multicastTimeout seconds
           try {
@@ -380,7 +407,12 @@ public class PlaceManager extends UnicastRemoteObject
         }
       }
     }.start();
+  }
 
+  /**
+   * This function is used to receive the state of other PlaceManager's
+   */
+  private void receiveOthersMulticastMessage() {
     // Handles listening to multicast messages
     new Thread() {
       public void run() {
@@ -396,7 +428,12 @@ public class PlaceManager extends UnicastRemoteObject
         }
       }
     }.start();
+  }
 
+  /**
+   * This function is used to remove old replicas that potentially died
+   */
+  private void removeOldReplicas() {
     // Handles removing all old replicas of 2xtimeout second
     new Thread() {
       public void run() {
@@ -411,7 +448,12 @@ public class PlaceManager extends UnicastRemoteObject
         }
       }
     }.start();
-
+  }
+  
+  /**
+   * This function is used to start handling the consensus of this server
+   */
+  private void consensusStart() {    
     // Handles consensus
     new Thread() {
       public void run() {
@@ -424,19 +466,5 @@ public class PlaceManager extends UnicastRemoteObject
         }
       }
     }.start();
-  }
-
-  /**
-   * This function is used to generate a new Timeout on this PlaceManager server. It will generate a
-   * random time between min and max.
-   * 
-   * @param min Contains Integer with min value (in milliseconds)
-   * 
-   * @param max Contains Integer with max value (in milliseconds)
-   * 
-   */
-  public void newTimeout(Integer min, Integer max) {
-    this.setLastTime(System.nanoTime());
-    this.setCurrentTimeout((long) (Math.random() * min + max - min) * 1000000);
   }
 }

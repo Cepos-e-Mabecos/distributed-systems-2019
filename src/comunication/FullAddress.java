@@ -28,7 +28,7 @@ import java.io.Serializable;
  * @author <a href="https://brenosalles.com" target="_blank">Breno</a>
  *
  * @since 1.1
- * @version 1.2
+ * @version 1.3
  * 
  */
 public class FullAddress implements Serializable {
@@ -76,7 +76,7 @@ public class FullAddress implements Serializable {
   }
 
   /*
-   * hashCode
+   * HashCode
    */
   @Override
   public int hashCode() {
@@ -92,34 +92,23 @@ public class FullAddress implements Serializable {
    */
   @Override
   public boolean equals(Object obj) {
-    if (obj == null) {
+    if (this == obj)
+      return true;
+    if (obj == null)
       return false;
-    }
-
-    if (this.getClass() != obj.getClass()) {
+    if (getClass() != obj.getClass())
       return false;
-    }
-
-    FullAddress casted = (FullAddress) obj;
-    if (this.address == null) {
-      if (casted.address != null) {
+    FullAddress other = (FullAddress) obj;
+    if (address == null) {
+      if (other.address != null)
         return false;
-      }
-    }
-
-    if (this.port == null) {
-      if (casted.port != null) {
+    } else if (address.equals(other.address) == false)
+      return false;
+    if (port == null) {
+      if (other.port != null)
         return false;
-      }
-    }
-
-    if (this.address.equals(casted.address) == false) {
+    } else if (port.equals(other.port) == false)
       return false;
-    }
-
-    if (this.port == casted.port) {
-      return false;
-    }
     return true;
   }
 }
