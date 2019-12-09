@@ -1,5 +1,3 @@
-import com.ceposmabecos.frontend.FrontEnd;
-
 /*
  * MIT License
  * 
@@ -21,22 +19,59 @@ import com.ceposmabecos.frontend.FrontEnd;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+package com.ceposmabecos.places;
+
+import java.io.Serializable;
+
 /**
- * This is the core
  * 
  * @author <a href="https://brenosalles.com" target="_blank">Breno</a>
  *
  * @since 1.0
- * @version 1.0
+ * @version 1.1
  * 
  */
-public class RESTServer {
-  public static void main(String[] args) {
-    String multicastAddress = args[0];
-    Integer multicastPort = Integer.parseInt(args[1]);
-    String localAddress = args[2];
-    Integer localPort = Integer.parseInt(args[3]);
-    
-    new FrontEnd(multicastAddress, multicastPort, localAddress, localPort).start();
+public class Place implements Serializable {
+  private static final long serialVersionUID = 5233792969868971769L;
+
+  /*
+   * Attributes
+   */
+  private String postalCode;
+  private String locality;
+
+  /*
+   * Constructor
+   */
+  public Place(String postalCode, String locality) {
+    this.postalCode = postalCode;
+    this.locality = locality;
+  }
+
+  /*
+   * Getters and Setters
+   */
+  public String getPostalCode() {
+    return postalCode;
+  }
+
+  public void setPostalCode(String postalCode) {
+    this.postalCode = postalCode;
+  }
+
+  public String getLocality() {
+    return locality;
+  }
+
+  public void setLocality(String locality) {
+    this.locality = locality;
+  }
+
+  /*
+   * String toString
+   */
+  @Override
+  public String toString() {
+    return this.getPostalCode() + "," + this.getLocality();
   }
 }
