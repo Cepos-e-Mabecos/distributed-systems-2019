@@ -19,18 +19,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package places;
+package com.ceposmabecos.places;
 
 import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
-import comunication.FullAddress;
+import com.ceposmabecos.comunication.FullAddress;
 
 /**
  * 
  * @author <a href="https://brenosalles.com" target="_blank">Breno</a>
  *
  * @since 1.1
- * @version 1.3
+ * @version 1.4
  * 
  */
 public interface ReplicasManagerInterface {
@@ -38,7 +38,7 @@ public interface ReplicasManagerInterface {
    * This function can be called remotely to add an address of a PlaceManager address to the class
    * ConcurrentHashMap that contains all addresses of all PlaceManager.
    * 
-   * @param replicaAddress Contains FullAddress with address (ip+port)
+   * @param replicaAddress Contains {@link com.ceposmabecos.comunication.FullAddress FullAddress} with address (ip+port)
    * 
    */
   void addReplica(FullAddress replicaAddress);
@@ -47,7 +47,7 @@ public interface ReplicasManagerInterface {
    * This function can be called remotely to remove an address of a PlaceManager address from the
    * class ConcurrentHashMap that contains all addresses of all PlaceManager.
    * 
-   * @param replicaAddress Contains FullAddress with address (ip+port)
+   * @param replicaAddress Contains {@link com.ceposmabecos.comunication.FullAddress FullAddress} with address (ip+port)
    * 
    */
   void removeReplica(FullAddress replicaAddress);

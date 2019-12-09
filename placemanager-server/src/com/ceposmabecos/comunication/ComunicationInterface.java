@@ -19,7 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package comunication;
+package com.ceposmabecos.comunication;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -36,16 +36,18 @@ import java.net.MulticastSocket;
  * @author <a href="https://brenosalles.com" target="_blank">Breno</a>
  *
  * @since 1.0
- * @version 1.3
+ * @version 1.4
  * 
  */
 public interface ComunicationInterface {
   /**
    * This function should be used to send an Unicast Message to a given host.
    * 
-   * @param fullAddress Contains FullAddress with address of the host.
+   * @param fullAddress Contains {@link com.ceposmabecos.comunication.FullAddress FullAddress} with
+   *        address of the host.
    * 
-   * @param message Contains message to be send.
+   * @param message Contains {@link com.ceposmabecos.comunication.ComunicationHeartbeat message} to
+   *        be send.
    * 
    * @throws IOException On Input or Output error.
    * 
@@ -73,9 +75,11 @@ public interface ComunicationInterface {
   /**
    * This function should be used to retrieve a Multicast Message of a given address and port.
    * 
-   * @param fullAddress Contains FullAddress with address and port to listen from.
+   * @param fullAddress Contains {@link com.ceposmabecos.comunication.FullAddress FullAddress} with
+   *        address and port to listen from.
    * 
-   * @return ComunicationMessage This returns the message that was sent to the Multicast Group.
+   * @return {@link com.ceposmabecos.comunication.ComunicationHeartbeat ComunicationHeartbeat} This
+   *         returns the message that was sent to the Multicast Group.
    * 
    * @throws IOException On Input or Output error.
    * 
@@ -113,12 +117,16 @@ public interface ComunicationInterface {
    * 
    * @param port Contains Integer with port to listen from.
    * 
-   * @return String This returns the message that was sent to the host.
+   * @return {@link com.ceposmabecos.comunication.ComunicationHeartbeat ComunicationHeartbeat} This
+   *         returns the message that was sent to the host.
    * 
    * @throws IOException On Input or Output error.
    * 
+   * @throws ClassNotFoundException
+   * 
    */
-  default String listenUnicastMessage(Integer port) throws IOException {
+  default ComunicationHeartbeat listenUnicastMessage(Integer port)
+      throws IOException, ClassNotFoundException {
     // Creates a "listen" socket on given port
     DatagramSocket socket = new DatagramSocket(port);
 
@@ -129,9 +137,14 @@ public interface ComunicationInterface {
     // Receives datagram
     socket.receive(datagram);
 
+    ByteArrayInputStream bais = new ByteArrayInputStream(buffer);
+    ObjectInputStream ois = new ObjectInputStream(bais);
+
+    ComunicationHeartbeat message = (ComunicationHeartbeat) ois.readObject();
+
     // Closes socket
     socket.close();
 
-    return new String(datagram.getData(), 0, datagram.getLength());
+    return message;
   }
 }

@@ -23,7 +23,7 @@ import java.net.UnknownHostException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
-import places.PlaceManager;
+import com.ceposmabecos.places.PlaceManager;
 
 /**
  * 

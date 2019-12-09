@@ -18,24 +18,24 @@
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package consensus;
+package com.ceposmabecos.consensus;
 
 import java.io.IOException;
-import places.PlaceManager;
+import com.ceposmabecos.places.PlaceManager;
 
 /**
  * 
  * @author <a href="https://brenosalles.com" target="_blank">Breno</a>
  *
  * @since 1.1
- * @version 1.2
+ * @version 1.3
  * 
  */
 public interface ConsensusHandlerInterface {
   /**
    * This function should be used to handle the behaviour of a PlaceManager server.
    * 
-   * @param replica Contains PlaceManager to be handled.
+   * @param replica Contains {@link com.ceposmabecos.places.PlaceManager PlaceManager} to be handled.
    * 
    * @throws IOException On Input or Output error.
    * 

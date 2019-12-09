@@ -19,9 +19,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package consensus;
+package com.ceposmabecos.consensus;
 
-import places.PlaceManager;
+import com.ceposmabecos.places.PlaceManager;
 
 /**
  * 
