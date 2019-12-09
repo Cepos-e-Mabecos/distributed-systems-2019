@@ -6,4 +6,4 @@ RUN mvn clean install
 RUN mvn dependency:resolve
 RUN mvn verify
 
-CMD java -jar ./target/RESTServer.jar $MULTICASTADDRESS $MULTICASTPORT
+CMD java -jar ./target/RESTServer.jar $MULTICASTADDRESS $MULTICASTPORT $FRONTENDADDRESS $FRONTENDPORT
