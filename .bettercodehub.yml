@@ -2,4 +2,5 @@ component_depth: 15
 languages:
 - java
 exclude:
-- ./docs/.*
+- ./placemanager-server/docs/.*
+- ./rest-server/docs/.*
