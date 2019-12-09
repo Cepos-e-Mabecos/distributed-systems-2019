@@ -19,30 +19,30 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package com.ceposmabecos.comunication;
+package comunication;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import places.Place;
 
 /**
  * 
  * @author <a href="https://brenosalles.com" target="_blank">Breno</a>
  *
  * @since 1.2
- * @version 1.3
+ * @version 1.2
  * 
  */
 public class ComunicationHeartbeat implements Serializable {
-  /**
-   * 
-   */
-  private static final long serialVersionUID = 8366596922474534631L;
+  private static final long serialVersionUID = 5870980970877709785L;
+
   /*
    * Attributes
    */
   private String message;
   private Integer term;
   private FullAddress fullAddress;
-  private Object object;
+  private ArrayList<Place> places;
 
   /*
    * Constructors
@@ -55,11 +55,11 @@ public class ComunicationHeartbeat implements Serializable {
   }
 
   public ComunicationHeartbeat(String message, Integer term, FullAddress fullAddress,
-      Object object) {
+      ArrayList<Place> places) {
     this.message = message;
     this.term = term;
     this.fullAddress = fullAddress;
-    this.object = object;
+    this.places = places;
   }
 
   /*
@@ -89,12 +89,12 @@ public class ComunicationHeartbeat implements Serializable {
     this.fullAddress = fullAddress;
   }
 
-  public Object getObject() {
-    return object;
+  public ArrayList<Place> getPlaces() {
+    return places;
   }
 
-  public void setObject(Object object) {
-    this.object = object;
+  public void setPlaces(ArrayList<Place> places) {
+    this.places = places;
   }
 
   /*

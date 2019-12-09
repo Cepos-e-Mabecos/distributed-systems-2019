@@ -18,60 +18,31 @@
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+package consensus;
 
-package com.ceposmabecos.places;
-
-import java.io.Serializable;
+import java.io.IOException;
+import places.PlaceManager;
 
 /**
  * 
  * @author <a href="https://brenosalles.com" target="_blank">Breno</a>
  *
- * @since 1.0
- * @version 1.1
+ * @since 1.1
+ * @version 1.2
  * 
  */
-public class Place implements Serializable {
-  private static final long serialVersionUID = 5233792969868971769L;
-
-  /*
-   * Attributes
+public interface ConsensusHandlerInterface {
+  /**
+   * This function should be used to handle the behaviour of a PlaceManager server.
+   * 
+   * @param replica Contains PlaceManager to be handled.
+   * 
+   * @throws IOException On Input or Output error.
+   * 
+   * @throws ClassNotFoundException When reading a class outputs error.
+   * 
+   * @throws InterruptedException When it fails to wait for the thread.
+   * 
    */
-  private String postalCode;
-  private String locality;
-
-  /*
-   * Constructor
-   */
-  public Place(String postalCode, String locality) {
-    this.postalCode = postalCode;
-    this.locality = locality;
-  }
-
-  /*
-   * Getters and Setters
-   */
-  public String getPostalCode() {
-    return postalCode;
-  }
-
-  public void setPostalCode(String postalCode) {
-    this.postalCode = postalCode;
-  }
-
-  public String getLocality() {
-    return locality;
-  }
-
-  public void setLocality(String locality) {
-    this.locality = locality;
-  }
-
-  /*
-   * String toString
-   */
-  @Override
-  public String toString() {
-    return this.getPostalCode() + "," + this.getLocality();
-  }
+  void handler(PlaceManager replica) throws ClassNotFoundException, IOException, InterruptedException;
 }

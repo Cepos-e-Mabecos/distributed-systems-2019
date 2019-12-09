@@ -19,76 +19,69 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package com.ceposmabecos.places;
+package places;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
-import java.util.HashMap;
+import java.util.ArrayList;
 
 /**
  * 
  * @author <a href="https://brenosalles.com" target="_blank">Breno</a>
  *
  * @since 1.0
- * @version 1.1
+ * @version 1.0
  * 
  */
 public interface PlacesListInterface extends Remote {
   /**
-   * This function should be called remotely to add a Place to the class HashMap of &#60;String, Place&#62;.
+   * This function should be called remotely to add a Place to the class ArrayList of Places.
    * 
-   * @param place Contains object of type {@link com.ceposmabecos.places.Place Place} to be added.
+   * @param place Contains object of type Place to be added.
    * 
    * @throws RemoteException When it fails to reach the the host.
+   * 
+   * @see RemoteException
    * 
    */
   void addPlace(Place place) throws RemoteException;
-  
-  /**
-   * This function should be called remotely to remove a Place to the class HashMap of &#60;String, Place&#62;.
-   * 
-   * @param postalCode Contains string with postalCode to be used to remove the Place.
-   * 
-   * @return {@link com.ceposmabecos.places.Place Place} This returns the deleted Place.
-   * 
-   * @throws RemoteException When it fails to reach the the host.
-   * 
-   */
-  Place removePlace(String postalCode) throws RemoteException;
 
   /**
-   * This function should be called remotely to retrieve a specific Place from the class HashMap of &#60;String, Place&#62;.
+   * This function should be called remotely to retrieve a specific Place from the class ArrayList
+   * of Place.
    * 
    * @param postalCode Contains string with postalCode to be used to search the Place.
    * 
-   * @return {@link com.ceposmabecos.places.Place} This returns the corresponding Place.
+   * @return Place This returns the corresponding Place.
    * 
    * @throws RemoteException When it fails to reach the host.
+   * 
+   * @see RemoteException
    * 
    */
   Place getPlace(String postalCode) throws RemoteException;
 
   /**
-   * This function should be called remotely to retrieve the class HashMap of &#60;String, Place&#62;.
+   * This function should be called remotely to retrieve the class ArrayList of Place.
    * 
-   * @return HashMap This returns all Place.
+   * @return ArrayList This returns all Place.
    * 
    * @throws RemoteException When it fails to reach the host.
    * 
    * @see RemoteException
    * 
    */
-  HashMap<String, Place> getAllPlaces() throws RemoteException;
+  ArrayList<Place> getAllPlaces() throws RemoteException;
 
   /**
-   * This function should be called remotely to change the class HashMap of &#60;String, Place&#62;.
+   * This function should be called remotely to change the class ArrayList of Place.
    * 
-   * @param places Contains HashMap of &#60;String, {@link com.ceposmabecos.places.Place Place}&#62;.
+   * @param places Contains ArrayList with all Place.
    * 
    * @throws RemoteException When it fails to reach the host.
    * 
    * @see RemoteException
    * 
    */
-  void setAllPlaces(HashMap<String, Place> places) throws RemoteException;
+  void setAllPlaces(ArrayList<Place> places) throws RemoteException;
 }

@@ -19,29 +19,30 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package com.ceposmabecos.places;
+package places;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
-import com.ceposmabecos.comunication.ComunicationHeartbeat;
-import com.ceposmabecos.comunication.ComunicationInterface;
-import com.ceposmabecos.comunication.FullAddress;
-import com.ceposmabecos.consensus.ConsensusRole;
+import comunication.ComunicationHeartbeat;
+import comunication.ComunicationInterface;
+import comunication.FullAddress;
+import consensus.ConsensusRole;
 
 /**
- * This is the core PlaceManager
+ * This is the core
  * 
  * @author <a href="https://brenosalles.com" target="_blank">Breno</a>
  *
  * @since 1.0
- * @version 1.7
+ * @version 1.6
  * 
  */
 public class PlaceManager extends UnicastRemoteObject
@@ -51,7 +52,8 @@ public class PlaceManager extends UnicastRemoteObject
   /*
    * PlaceManager Attributes
    */
-  private HashMap<String, Place> places = new HashMap<String, Place>();
+  private HashMap<Place, Integer> tempPlaces = new HashMap<Place, Integer>();
+  private ArrayList<Place> places = new ArrayList<Place>();
   private ConcurrentHashMap<FullAddress, Date> replicas =
       new ConcurrentHashMap<FullAddress, Date>();
   private FullAddress multicastAddress;
@@ -60,11 +62,11 @@ public class PlaceManager extends UnicastRemoteObject
   /*
    * Consensus Server Attributes
    */
-  private ConsensusRole currentRole = ConsensusRole.FOLLOWER;
-  private Integer currentTerm = 0;
+  private ConsensusRole currentRole;
+  private Integer currentTerm;
   private final Integer multicastTimeout = 3000;
-  private Long lastTime = System.nanoTime();
-  private Long currentTimeout = (long) (Math.random() * 5000 + 5000) * 1000000;
+  private Long lastTime;
+  private Long currentTimeout;
 
   /*
    * Follower Attributes
@@ -75,12 +77,22 @@ public class PlaceManager extends UnicastRemoteObject
   /*
    * Constructor
    */
-  public PlaceManager(String multicastAddress, Integer multicastPort, String localAddress,
-      Integer localPort) throws RemoteException, UnknownHostException {
+  public PlaceManager(String multicastAddress, Integer multicastPort, String localAddress, Integer localPort)
+      throws RemoteException, UnknownHostException {
     // PlaceManager
     super(0);
     this.multicastAddress = new FullAddress(multicastAddress, multicastPort);
     this.localAddress = new FullAddress(localAddress, localPort);
+
+    // Consensus Server Attributes
+    this.currentRole = ConsensusRole.FOLLOWER;
+    this.currentTerm = 0;
+    this.currentTimeout = (long) (Math.random() * 5000 + 5000) * 1000000;
+
+    // Follower Attributes
+    this.lastTime = System.nanoTime();
+    this.leaderAddress = null;
+    this.candidateAddress = null;
   }
 
   /*
@@ -150,6 +162,14 @@ public class PlaceManager extends UnicastRemoteObject
     this.candidateAddress = candidateAddress;
   }
 
+  public synchronized HashMap<Place, Integer> getTempPlaces() {
+    return this.tempPlaces;
+  }
+
+  public synchronized void setTempPlaces(HashMap<Place, Integer> tempPlaces) {
+    this.tempPlaces = tempPlaces;
+  }
+
   /*
    * String toString
    */
@@ -162,75 +182,62 @@ public class PlaceManager extends UnicastRemoteObject
 
 
   /**
-   * This function should be called remotely to add a Place to the class HashMap of &#60;String, Place&#62;.
+   * This function can be called remotely to add a Place to the class ArrayList of Places.
    * 
-   * @param place Contains object of type {@link com.ceposmabecos.places.Place Place} to be added.
+   * @param place Contains object of type Place to be added.
    * 
    * @throws RemoteException When it fails to reach the the host.
    * 
    */
   @Override
   public void addPlace(Place place) throws RemoteException {
-    places.put(place.getPostalCode(), place);
+    places.add(place);
   }
 
   /**
-   * This function should be called remotely to remove a Place to the class HashMap of &#60;String, Place&#62;.
-   * 
-   * @param postalCode Contains string with postalCode to be used to remove the Place.
-   * 
-   * @return {@link com.ceposmabecos.places.Place Place} This returns the deleted Place.
-   * 
-   * @throws RemoteException When it fails to reach the the host.
-   * 
-   */
-  @Override
-  public Place removePlace(String postalCode) throws RemoteException {
-    return places.remove(postalCode);
-  }
-
-  /**
-   * This function should be called remotely to retrieve a specific Place from the class HashMap of &#60;String, Place&#62;.
+   * This function can be called remotely to retrieve a specific Place from the class ArrayList of
+   * Place.
    * 
    * @param postalCode Contains string with postalCode to be used to search the Place.
    * 
-   * @return {@link com.ceposmabecos.places.Place} This returns the corresponding Place.
+   * @return Place This returns the corresponding Place.
    * 
    * @throws RemoteException When it fails to reach the host.
    * 
    */
   @Override
   public Place getPlace(String postalCode) throws RemoteException {
-    return places.get(postalCode);
+    for (Place place : places) {
+      if (place.getPostalCode().equals(postalCode)) {
+        return place;
+      }
+    }
+    return null;
   }
 
   /**
-   * This function should be called remotely to retrieve the class HashMap of &#60;String, Place&#62;.
+   * This function can be called remotely to retrieve the class ArrayList of Place.
    * 
-   * @return HashMap This returns all Place.
+   * @return ArrayList This returns all Place.
    * 
    * @throws RemoteException When it fails to reach the host.
    * 
-   * @see RemoteException
-   * 
    */
   @Override
-  public HashMap<String, Place> getAllPlaces() throws RemoteException {
+  public ArrayList<Place> getAllPlaces() throws RemoteException {
     return places;
   }
 
   /**
-   * This function should be called remotely to change the class HashMap of &#60;String, Place&#62;.
+   * This function can be called remotely to change the class ArrayList of Place.
    * 
-   * @param places Contains HashMap of &#60;String, {@link com.ceposmabecos.places.Place Place}&#62;.
+   * @param places Contains ArrayList with all Place.
    * 
    * @throws RemoteException When it fails to reach the host.
    * 
-   * @see RemoteException
-   * 
    */
   @Override
-  public void setAllPlaces(HashMap<String, Place> places) throws RemoteException {
+  public void setAllPlaces(ArrayList<Place> places) throws RemoteException {
     this.places = places;
   }
 
@@ -238,7 +245,7 @@ public class PlaceManager extends UnicastRemoteObject
    * This function can be called remotely to add an address of a PlaceManager address to the class
    * ConcurrentHashMap that contains all addresses of all PlaceManager.
    * 
-   * @param replicaAddress Contains {@link com.ceposmabecos.comunication.FullAddress FullAddress} with address (ip+port)
+   * @param replicaAddress Contains FullAddress with address (ip+port)
    * 
    */
   @Override
@@ -250,7 +257,7 @@ public class PlaceManager extends UnicastRemoteObject
    * This function can be called remotely to remove an address of a PlaceManager address from the
    * class ConcurrentHashMap that contains all addresses of all PlaceManager.
    * 
-   * @param replicaAddress Contains {@link com.ceposmabecos.comunication.FullAddress FullAddress} with address (ip+port)
+   * @param replicaAddress Contains FullAddress with address (ip+port)
    * 
    */
   @Override
@@ -315,9 +322,9 @@ public class PlaceManager extends UnicastRemoteObject
   }
 
   /**
-   * This function should be used to handle the behaviour of a PlaceManager server.
+   * This function is used to handle the behaviour of this PlaceManager server.
    * 
-   * @param replica Contains {@link com.ceposmabecos.places.PlaceManager PlaceManager} to be handled.
+   * @param replica Contains replica to be managed.
    * 
    * @throws IOException On Input or Output error.
    * 
@@ -362,7 +369,7 @@ public class PlaceManager extends UnicastRemoteObject
   /**
    * This function is used to send the current state of this PlaceManager
    */
-  private void sendSelfMulticastMessage() {
+  private void sendSelfMulticastMessage() {    
     // Handles sending all multicast messages
     new Thread() {
       public void run() {
@@ -442,11 +449,11 @@ public class PlaceManager extends UnicastRemoteObject
       }
     }.start();
   }
-
+  
   /**
    * This function is used to start handling the consensus of this server
    */
-  private void consensusStart() {
+  private void consensusStart() {    
     // Handles consensus
     new Thread() {
       public void run() {

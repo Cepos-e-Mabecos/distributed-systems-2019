@@ -19,21 +19,19 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package com.ceposmabecos.consensus;
+package consensus;
 
 import java.io.IOException;
-import java.util.HashMap;
-import com.ceposmabecos.comunication.ComunicationHeartbeat;
-import com.ceposmabecos.comunication.ComunicationInterface;
-import com.ceposmabecos.places.Place;
-import com.ceposmabecos.places.PlaceManager;
+import comunication.ComunicationHeartbeat;
+import comunication.ComunicationInterface;
+import places.PlaceManager;
 
 /**
  * 
  * @author <a href="https://brenosalles.com" target="_blank">Breno</a>
  *
  * @since 1.0
- * @version 1.5
+ * @version 1.4
  * 
  */
 public enum ConsensusRole implements ConsensusHandlerInterface {
@@ -41,7 +39,6 @@ public enum ConsensusRole implements ConsensusHandlerInterface {
     /*
      * Implementation of handler when ConsensusRole.FOLLOWER.
      */
-    @SuppressWarnings("unchecked")
     @Override
     public void handler(PlaceManager replica) throws ClassNotFoundException, IOException {
       if (System.nanoTime() - replica.getLastTime() > replica.getCurrentTimeout()) {
@@ -102,8 +99,8 @@ public enum ConsensusRole implements ConsensusHandlerInterface {
             replica.setLeaderAddress(message.getFullAddress());
 
             // Appends new places if exits
-            if (message.getObject() != null) {
-              replica.setAllPlaces((HashMap<String, Place>) message.getObject());
+            if (message.getPlaces() != null) {
+              replica.setAllPlaces(message.getPlaces());
             }
             return;
           }
@@ -115,8 +112,8 @@ public enum ConsensusRole implements ConsensusHandlerInterface {
             replica.newTimeout(5000, 10000);
 
             // Appends new places if exits
-            if (message.getObject() != null) {
-              replica.setAllPlaces((HashMap<String, Place>) message.getObject());
+            if (message.getPlaces() != null) {
+              replica.setAllPlaces(message.getPlaces());
             }
           }
 
@@ -231,8 +228,6 @@ public enum ConsensusRole implements ConsensusHandlerInterface {
 
   /**
    * The implementation of the handler varies based on ConsensusRole
-   * 
-   * @param replica Contains {@link com.ceposmabecos.places.PlaceManager PlaceManager} to be handled.
    * 
    * @throws IOException On Input or Output error.
    * 

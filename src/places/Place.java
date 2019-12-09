@@ -19,38 +19,59 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package com.ceposmabecos.consensus;
+package places;
 
-import com.ceposmabecos.places.PlaceManager;
+import java.io.Serializable;
 
 /**
  * 
  * @author <a href="https://brenosalles.com" target="_blank">Breno</a>
  *
- * @since 1.2
- * @version 1.4
+ * @since 1.0
+ * @version 1.1
  * 
  */
-public class ConsensusVoting implements Runnable {
-  private volatile Boolean running = true;
-  private PlaceManager replica;
+public class Place implements Serializable {
+  private static final long serialVersionUID = 5233792969868971769L;
 
-  public ConsensusVoting(PlaceManager replica) {
-    this.replica = replica;
+  /*
+   * Attributes
+   */
+  private String postalCode;
+  private String locality;
+
+  /*
+   * Constructor
+   */
+  public Place(String postalCode, String locality) {
+    this.postalCode = postalCode;
+    this.locality = locality;
   }
 
-  public synchronized void terminate() {
-    running = false;
+  /*
+   * Getters and Setters
+   */
+  public String getPostalCode() {
+    return postalCode;
   }
 
+  public void setPostalCode(String postalCode) {
+    this.postalCode = postalCode;
+  }
+
+  public String getLocality() {
+    return locality;
+  }
+
+  public void setLocality(String locality) {
+    this.locality = locality;
+  }
+
+  /*
+   * String toString
+   */
   @Override
-  public void run() {
-    replica.newTimeout(2500, 5000);
-    while (running == true) {
-      if (System.nanoTime() - replica.getLastTime() > replica.getCurrentTimeout()) {
-        this.terminate();
-      }
-    }
+  public String toString() {
+    return this.getPostalCode() + "," + this.getLocality();
   }
-
 }
