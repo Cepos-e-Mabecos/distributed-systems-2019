@@ -1,8 +1,14 @@
-language: java
+language:
+  - java
 
 services:
   - docker
 
-before_install:
-  - docker build --tag maven .
-  - docker run --name RMIServer --detach --env-file env.list maven
+before_script:
+  - docker-compose up --detach --build
+
+script:
+  - docker ps -a
+
+after_script:
+  - docker-compose down
