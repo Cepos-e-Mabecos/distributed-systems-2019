@@ -174,6 +174,7 @@ public class FrontEnd {
           try {
             ComunicationHeartbeat message =
                 ComunicationInterface.listenMulticastMessage(FrontEnd.this.getMulticastAddress());
+            System.out.println(message.getFullAddress());
             switch (message.getMessage()) {
               case "LEADER":
                 if (message.getTerm() > FrontEnd.this.getCurrentTerm()) {

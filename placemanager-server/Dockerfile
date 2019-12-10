@@ -1,7 +1,7 @@
 FROM maven:3-jdk-11
-COPY . /usr/src/
-WORKDIR /usr/src/
+COPY ./placemanager-server/ /usr/src/placemanager-server/
 
+WORKDIR /usr/src/placemanager-server/
 RUN mvn clean install
 RUN mvn dependency:resolve
 RUN mvn verify
