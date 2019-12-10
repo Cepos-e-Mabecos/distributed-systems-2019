@@ -1,6 +1,0 @@
-component_depth: 15
-languages:
-- java
-exclude:
-- ./placemanager-server/docs/.*
-- ./rest-server/docs/.*
