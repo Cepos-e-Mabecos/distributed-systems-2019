@@ -31,7 +31,6 @@ import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Map.Entry;
@@ -52,7 +51,7 @@ import spark.Response;
  * @author <a href="https://brenosalles.com" target="_blank">Breno</a>
  *
  * @since 1.0
- * @version 1.0
+ * @version 1.1
  * 
  */
 public class FrontEnd {
@@ -219,10 +218,10 @@ public class FrontEnd {
   private String readPlaces(Request req, Response res) {
     res.type("application/json");
     PlacesListInterface pl = null;
-    ArrayList<Place> allPlaces = null;
+    Object[] allPlaces = null;
     try {
       pl = (PlacesListInterface) Naming.lookup("rmi://" + this.getRandomNode() + "/placelist");
-      allPlaces = (ArrayList<Place>) pl.getAllPlaces().values();
+      allPlaces = pl.getAllPlaces().values().toArray();
     } catch (MalformedURLException | RemoteException | NotBoundException e) {
       // Error placemanager
       res.status(503);
@@ -334,12 +333,12 @@ public class FrontEnd {
   }
 
   @SuppressWarnings("unchecked")
-  private String newJSONPlaces(ArrayList<Place> places) {
+  private String newJSONPlaces(Object[] places) {
     JSONArray arr = new JSONArray();
-    for (Place place : places) {
+    for (Object place : places) {
       JSONObject obj = new JSONObject();
-      obj.put("postalCode", place.getPostalCode());
-      obj.put("locality", place.getLocality());
+      obj.put("postalCode", ((Place) place).getPostalCode());
+      obj.put("locality", ((Place) place).getLocality());
       arr.add(obj);
     }
     return arr.toJSONString();
