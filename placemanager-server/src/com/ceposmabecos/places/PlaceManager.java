@@ -33,7 +33,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.ceposmabecos.comunication.ComunicationHeartbeat;
 import com.ceposmabecos.comunication.ComunicationInterface;
 import com.ceposmabecos.comunication.FullAddress;
-import com.ceposmabecos.consensus.ConsensusRole;
 
 /**
  * This is the core PlaceManager

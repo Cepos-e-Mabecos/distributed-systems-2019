@@ -18,31 +18,37 @@
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.ceposmabecos.consensus;
 
-import java.io.IOException;
-import com.ceposmabecos.places.PlaceManager;
+package com.ceposmabecos.places;
 
 /**
  * 
  * @author <a href="https://brenosalles.com" target="_blank">Breno</a>
  *
- * @since 1.1
- * @version 1.3
+ * @since 1.2
+ * @version 1.4
  * 
  */
-public interface ConsensusHandlerInterface {
-  /**
-   * This function should be used to handle the behaviour of a PlaceManager server.
-   * 
-   * @param replica Contains {@link com.ceposmabecos.places.PlaceManager PlaceManager} to be handled.
-   * 
-   * @throws IOException On Input or Output error.
-   * 
-   * @throws ClassNotFoundException When reading a class outputs error.
-   * 
-   * @throws InterruptedException When it fails to wait for the thread.
-   * 
-   */
-  void handler(PlaceManager replica) throws ClassNotFoundException, IOException, InterruptedException;
+public class ConsensusVoting implements Runnable {
+  private volatile Boolean running = true;
+  private PlaceManager replica;
+
+  public ConsensusVoting(PlaceManager replica) {
+    this.replica = replica;
+  }
+
+  public synchronized void terminate() {
+    running = false;
+  }
+
+  @Override
+  public void run() {
+    replica.newTimeout(2500, 5000);
+    while (running == true) {
+      if (System.nanoTime() - replica.getLastTime() > replica.getCurrentTimeout()) {
+        this.terminate();
+      }
+    }
+  }
+
 }
