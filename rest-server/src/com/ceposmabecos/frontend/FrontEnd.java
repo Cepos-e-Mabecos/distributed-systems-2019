@@ -31,10 +31,12 @@ import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import com.ceposmabecos.comunication.ComunicationHeartbeat;
 import com.ceposmabecos.comunication.ComunicationInterface;
@@ -125,7 +127,7 @@ public class FrontEnd {
     receiveOthersMulticastMessage();
     removeOldReplicas();
     get("/places", (req, res) -> {
-      return readPlace(req, res);
+      return readPlaces(req, res);
     });
     get("/places/:codPostal", (req, res) -> {
       return readPlace(req, res);
@@ -212,6 +214,22 @@ public class FrontEnd {
         }
       }
     }.start();
+  }
+
+  private String readPlaces(Request req, Response res) {
+    res.type("application/json");
+    PlacesListInterface pl = null;
+    ArrayList<Place> allPlaces = null;
+    try {
+      pl = (PlacesListInterface) Naming.lookup("rmi://" + this.getRandomNode() + "/placelist");
+      allPlaces = (ArrayList<Place>) pl.getAllPlaces().values();
+    } catch (MalformedURLException | RemoteException | NotBoundException e) {
+      // Error placemanager
+      res.status(503);
+      return newJSONMessage("Service Unavailable");
+    }
+    res.status(200);
+    return newJSONPlaces(allPlaces);
   }
 
   private String readPlace(Request req, Response res) {
@@ -313,5 +331,17 @@ public class FrontEnd {
     obj.put("postalCode", place.getPostalCode());
     obj.put("locality", place.getLocality());
     return obj.toJSONString();
+  }
+
+  @SuppressWarnings("unchecked")
+  private String newJSONPlaces(ArrayList<Place> places) {
+    JSONArray arr = new JSONArray();
+    for (Place place : places) {
+      JSONObject obj = new JSONObject();
+      obj.put("postalCode", place.getPostalCode());
+      obj.put("locality", place.getLocality());
+      arr.add(obj);
+    }
+    return arr.toJSONString();
   }
 }

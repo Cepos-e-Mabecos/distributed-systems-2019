@@ -19,14 +19,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package com.ceposmabecos.consensus;
+package com.ceposmabecos.places;
 
 import java.io.IOException;
 import java.util.HashMap;
 import com.ceposmabecos.comunication.ComunicationHeartbeat;
 import com.ceposmabecos.comunication.ComunicationInterface;
-import com.ceposmabecos.places.Place;
-import com.ceposmabecos.places.PlaceManager;
 
 /**
  * 
