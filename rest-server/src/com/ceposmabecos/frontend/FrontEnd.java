@@ -315,6 +315,9 @@ public class FrontEnd {
   }
 
   private FullAddress getRandomNode() {
+    if (this.getReplicas().size() == 0) {
+      return null;
+    }
     if (this.getReplicas().size() == 1) {
       // Only leader available
       return this.getLeaderAddress();
