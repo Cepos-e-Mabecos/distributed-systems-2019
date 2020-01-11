@@ -315,6 +315,10 @@ public class FrontEnd {
   }
 
   private FullAddress getRandomNode() {
+    if (this.getReplicas().size() == 1) {
+      // Only leader available
+      return this.getLeaderAddress();
+    }
     Object[] keys = this.getReplicas().keySet().toArray();
     FullAddress randomAddress = null;
     do {
