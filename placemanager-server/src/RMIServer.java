@@ -30,7 +30,7 @@ import com.ceposmabecos.places.PlaceManager;
  * @author <a href="https://brenosalles.com" target="_blank">Breno</a>
  *
  * @since 1.0
- * @version 1.5
+ * @version 1.6
  * 
  */
 public class RMIServer {
@@ -60,7 +60,7 @@ public class RMIServer {
     }
     replica =
         new PlaceManager(multicastAddress, multicastPort, thisReplicaAddress, thisReplicaPort);
-    r.rebind("placelist", replica);
+    r.rebind("placemanager", replica);
     System.out.println("PlaceManager running on port: " + thisReplicaPort);
     return replica;
   }
