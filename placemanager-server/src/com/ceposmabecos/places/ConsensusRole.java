@@ -22,6 +22,10 @@
 package com.ceposmabecos.places;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.rmi.Naming;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
 import java.util.HashMap;
 import com.ceposmabecos.comunication.ComunicationHeartbeat;
 import com.ceposmabecos.comunication.ComunicationInterface;
@@ -31,9 +35,10 @@ import com.ceposmabecos.comunication.ComunicationInterface;
  * @author <a href="https://brenosalles.com" target="_blank">Breno</a>
  *
  * @since 1.0
- * @version 1.5
+ * @version 1.6
  * 
  */
+
 public enum ConsensusRole implements ConsensusHandlerInterface {
   FOLLOWER {
     /*
@@ -99,9 +104,10 @@ public enum ConsensusRole implements ConsensusHandlerInterface {
             replica.setCurrentTerm(message.getTerm());
             replica.setLeaderAddress(message.getFullAddress());
 
-            // Appends new places if exits
+            // Checks if message contains info
             if (message.getObject() != null) {
-              replica.setAllPlaces((HashMap<String, Place>) message.getObject());
+              HashMap<Integer, Log> tempLog = (HashMap<Integer, Log>) message.getObject();
+              processMessages(replica, tempLog);
             }
             return;
           }
@@ -112,10 +118,13 @@ public enum ConsensusRole implements ConsensusHandlerInterface {
             // Reset timeout
             replica.newTimeout(5000, 10000);
 
-            // Appends new places if exits
+            // Checks if message contains info
             if (message.getObject() != null) {
-              replica.setAllPlaces((HashMap<String, Place>) message.getObject());
+              HashMap<Integer, Log> tempLog = (HashMap<Integer, Log>) message.getObject();
+              processMessages(replica, tempLog);
             }
+
+            return;
           }
 
           // Not my leader
@@ -123,6 +132,69 @@ public enum ConsensusRole implements ConsensusHandlerInterface {
         default:
           /* Intentionally empty. Can be used to error handling */
           return;
+      }
+    }
+
+    private void processMessages(PlaceManager replica, HashMap<Integer, Log> tempLog)
+        throws RemoteException {
+      LogInterface li = null;
+      PlacesListInterface pi = null;
+      try {
+        li = (LogInterface) Naming.lookup("rmi://" + replica.getLeaderAddress() + "/placemanager");
+        pi = (PlacesListInterface) Naming
+            .lookup("rmi://" + replica.getLeaderAddress() + "/placemanager");
+      } catch (MalformedURLException | RemoteException | NotBoundException e) {
+        System.out.println(e.getMessage());
+      }
+
+      // Gets last Log
+      Log lastLog = li.getLastLog();
+      if (lastLog != null) {
+        if (lastLog.getNumber() / 2 >= replica.getLogNumber()) {
+          // Replica is too much behind, get snapshot
+          replica.setAllPlaces(pi.getAllPlaces());
+          replica.setLogNumber(lastLog.getNumber());
+          return;
+        }
+      }
+
+      while (tempLog.size() > 0) {
+        Log log = tempLog.get(replica.getLogNumber() + 1);
+
+        if (log == null) {
+          // Log doesnt exist
+          log = li.getLog(replica.getLogNumber() + 1);
+        }
+
+        HashMap<String, Place> places = replica.getPlaces();
+        switch (log.getAction()) {
+          case CREATE:
+            places.put(log.getPlace().getPostalCode(), log.getPlace());
+            break;
+
+          case UPDATE:
+            if (places.containsKey(log.getPlace().getPostalCode())) {
+              places.put(log.getPlace().getPostalCode(), log.getPlace());
+            }
+            break;
+
+          case DELETE:
+            places.remove(log.getPlace().getPostalCode());
+            break;
+
+          default:
+            /* Error handling if necessary. Intentionally empty */
+        }
+
+        // Adds to finalLog
+        replica.getFinalLog().put(replica.getLogNumber() + 1,
+            tempLog.get(replica.getLogNumber() + 1));
+
+        // Removes from tempLog
+        tempLog.remove(replica.getLogNumber() + 1);
+
+        // Updates logNumber
+        replica.setLogNumber(replica.getLogNumber() + 1);
       }
     }
   },
@@ -228,9 +300,11 @@ public enum ConsensusRole implements ConsensusHandlerInterface {
   };
 
   /**
-   * The implementation of the handler varies based on ConsensusRole
+   * The implementation of the handler varies based on {@link com.ceposmabecos.places.ConsensusRole
+   * ConsensusRole}
    * 
-   * @param replica Contains {@link com.ceposmabecos.places.PlaceManager PlaceManager} to be handled.
+   * @param replica Contains {@link com.ceposmabecos.places.PlaceManager PlaceManager} to be
+   *        handled.
    * 
    * @throws IOException On Input or Output error.
    * 

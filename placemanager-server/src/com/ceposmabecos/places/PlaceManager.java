@@ -40,11 +40,11 @@ import com.ceposmabecos.comunication.FullAddress;
  * @author <a href="https://brenosalles.com" target="_blank">Breno</a>
  *
  * @since 1.0
- * @version 1.7
+ * @version 1.8
  * 
  */
 public class PlaceManager extends UnicastRemoteObject
-    implements PlacesListInterface, ReplicasManagerInterface {
+    implements PlacesListInterface, ReplicasManagerInterface, LogInterface {
   private static final long serialVersionUID = 3401280478997971431L;
 
   /*
@@ -55,6 +55,13 @@ public class PlaceManager extends UnicastRemoteObject
       new ConcurrentHashMap<FullAddress, Date>();
   private FullAddress multicastAddress;
   private FullAddress localAddress;
+  
+  /*
+   * Log Attributes
+   */
+  private HashMap<Integer, Log> finalLog = new HashMap<Integer, Log>();
+  private HashMap<Integer, Log> tempLog = new HashMap<Integer, Log>();
+  private Integer logNumber = 0;
 
   /*
    * Consensus Server Attributes
@@ -148,6 +155,46 @@ public class PlaceManager extends UnicastRemoteObject
   public synchronized void setCandidateAddress(FullAddress candidateAddress) {
     this.candidateAddress = candidateAddress;
   }
+  
+  public synchronized HashMap<Integer, Log> getFinalLog() {
+    return finalLog;
+  }
+  
+  public synchronized void setFinalLog(HashMap<Integer, Log> finalLog) {
+    this.finalLog = finalLog;
+  }
+  
+  public synchronized HashMap<Integer, Log> getTempLog() {
+    return tempLog;
+  }
+  
+  public synchronized void setTempLog(HashMap<Integer, Log> tempLog) {
+    this.tempLog = tempLog;
+  }
+  
+  public synchronized Integer getLogNumber() {
+    return logNumber;
+  }
+  
+  public synchronized void setLogNumber(Integer logNumber) {
+    this.logNumber = logNumber;
+  }
+
+  public synchronized HashMap<String, Place> getPlaces() {
+    return places;
+  }
+
+  public synchronized void setPlaces(HashMap<String, Place> places) {
+    this.places = places;
+  }
+
+  public synchronized ConcurrentHashMap<FullAddress, Date> getReplicas() {
+    return replicas;
+  }
+
+  public synchronized void setReplicas(ConcurrentHashMap<FullAddress, Date> replicas) {
+    this.replicas = replicas;
+  }
 
   /*
    * String toString
@@ -171,6 +218,7 @@ public class PlaceManager extends UnicastRemoteObject
   @Override
   public void addPlace(Place place) throws RemoteException {
     places.put(place.getPostalCode(), place);
+    tempLog.put(++logNumber, new Log(logNumber, LogAction.CREATE, place));
   }
 
   /**
@@ -185,6 +233,7 @@ public class PlaceManager extends UnicastRemoteObject
    */
   @Override
   public Place removePlace(String postalCode) throws RemoteException {
+    tempLog.put(++logNumber, new Log(logNumber, LogAction.DELETE, places.get(postalCode)));
     return places.remove(postalCode);
   }
 
@@ -312,6 +361,34 @@ public class PlaceManager extends UnicastRemoteObject
   public ConcurrentHashMap<FullAddress, Date> getAllReplicas() {
     return replicas;
   }
+  
+  /**
+   * This function can be called remotely to get a Log.
+   * 
+   * @param logBumber Contains the number of the log that the caller wants.
+   * 
+   * @return {@link com.ceposmabecos.places.Log Log} This returns the wanted log.
+   * 
+   * @throws RemoteException When it fails to reach the the host.
+   * 
+   */
+  @Override
+  public Log getLog(Integer logNumber) throws RemoteException {
+    return this.getFinalLog().get(logNumber);
+  }
+  
+  /**
+   * This function can be called remotely to get the last Log.
+
+   * @return {@link com.ceposmabecos.places.Log Log} This returns the last log.
+   * 
+   * @throws RemoteException When it fails to reach the the host.
+   * 
+   */
+  @Override
+  public Log getLastLog() throws RemoteException {
+    return this.getFinalLog().get(logNumber);
+  }
 
   /**
    * This function should be used to handle the behaviour of a PlaceManager server.
@@ -376,10 +453,18 @@ public class PlaceManager extends UnicastRemoteObject
                         PlaceManager.this.getLocalAddress()));
                 break;
               case LEADER:
+                HashMap<Integer, Log> tempLog = PlaceManager.this.getTempLog();
+                
                 ComunicationInterface.sendMessage(PlaceManager.this.getMulticastAddress(),
                     new ComunicationHeartbeat(PlaceManager.this.getCurrentRole().toString(),
                         PlaceManager.this.getCurrentTerm(), PlaceManager.this.getLocalAddress(),
-                        PlaceManager.this.getAllPlaces()));
+                        tempLog));
+                
+                // Commits tempLog
+                PlaceManager.this.getFinalLog().putAll(tempLog);
+                
+                // Clears tempLog
+                tempLog.clear();
                 break;
               default:
                 ComunicationInterface.sendMessage(PlaceManager.this.getMulticastAddress(),
