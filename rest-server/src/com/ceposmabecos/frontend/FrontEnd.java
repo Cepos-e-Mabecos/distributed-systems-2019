@@ -51,7 +51,7 @@ import spark.Response;
  * @author <a href="https://brenosalles.com" target="_blank">Breno</a>
  *
  * @since 1.0
- * @version 1.1
+ * @version 1.2
  * 
  */
 public class FrontEnd {
@@ -126,18 +126,23 @@ public class FrontEnd {
     receiveOthersMulticastMessage();
     removeOldReplicas();
     get("/places", (req, res) -> {
+      System.out.printf("%s %s\n", req.requestMethod(), req.matchedPath());
       return readPlaces(req, res);
     });
     get("/places/:codPostal", (req, res) -> {
+      System.out.printf("%s %s\n", req.requestMethod(), req.matchedPath());
       return readPlace(req, res);
     });
     post("/places", (req, res) -> {
+      System.out.printf("%s %s\n", req.requestMethod(), req.matchedPath());
       return createPlace(req, res);
     });
     put("/places/:codPostal", (req, res) -> {
+      System.out.printf("%s %s\n", req.requestMethod(), req.matchedPath());
       return updatePlace(req, res);
     });
     delete("/places/:codPostal", (req, res) -> {
+      System.out.printf("%s %s\n", req.requestMethod(), req.matchedPath());
       return deletePlace(req, res);
     });
   }
@@ -175,7 +180,6 @@ public class FrontEnd {
           try {
             ComunicationHeartbeat message =
                 ComunicationInterface.listenMulticastMessage(FrontEnd.this.getMulticastAddress());
-            System.out.println(message.getFullAddress());
             switch (message.getMessage()) {
               case "LEADER":
                 if (message.getTerm() > FrontEnd.this.getCurrentTerm()) {
@@ -220,7 +224,7 @@ public class FrontEnd {
     PlacesListInterface pl = null;
     Object[] allPlaces = null;
     try {
-      pl = (PlacesListInterface) Naming.lookup("rmi://" + this.getRandomNode() + "/placelist");
+      pl = (PlacesListInterface) Naming.lookup("rmi://" + this.getRandomNode() + "/placemanager");
       allPlaces = pl.getAllPlaces().values().toArray();
     } catch (MalformedURLException | RemoteException | NotBoundException e) {
       // Error placemanager
@@ -236,7 +240,7 @@ public class FrontEnd {
     PlacesListInterface pl = null;
     Place place = null;
     try {
-      pl = (PlacesListInterface) Naming.lookup("rmi://" + this.getRandomNode() + "/placelist");
+      pl = (PlacesListInterface) Naming.lookup("rmi://" + this.getRandomNode() + "/placemanager");
       place = pl.getPlace(req.params(":codPostal"));
     } catch (MalformedURLException | RemoteException | NotBoundException e) {
       // Error placemanager
@@ -257,7 +261,8 @@ public class FrontEnd {
     PlacesListInterface pl = null;
     Place place = new Place(req.queryParams("postalCode"), req.queryParams("locality"));
     try {
-      pl = (PlacesListInterface) Naming.lookup("rmi://" + this.getLeaderAddress() + "/placelist");
+      pl = (PlacesListInterface) Naming
+          .lookup("rmi://" + this.getLeaderAddress() + "/placemanager");
       pl.addPlace(place);
     } catch (MalformedURLException | RemoteException | NotBoundException e) {
       // Error placemanager
@@ -274,7 +279,8 @@ public class FrontEnd {
     PlacesListInterface pl = null;
     Place place = new Place(req.queryParams("postalCode"), req.queryParams("locality"));
     try {
-      pl = (PlacesListInterface) Naming.lookup("rmi://" + this.getLeaderAddress() + "/placelist");
+      pl = (PlacesListInterface) Naming
+          .lookup("rmi://" + this.getLeaderAddress() + "/placemanager");
       pl.addPlace(place);
     } catch (MalformedURLException | RemoteException | NotBoundException e) {
       // Error placemanager
@@ -291,7 +297,8 @@ public class FrontEnd {
     PlacesListInterface pl = null;
     Place place = null;
     try {
-      pl = (PlacesListInterface) Naming.lookup("rmi://" + this.getLeaderAddress() + "/placelist");
+      pl = (PlacesListInterface) Naming
+          .lookup("rmi://" + this.getLeaderAddress() + "/placemanager");
       place = pl.removePlace(req.params(":codPostal"));
     } catch (MalformedURLException | RemoteException | NotBoundException e) {
       // Error placemanager
@@ -308,6 +315,13 @@ public class FrontEnd {
   }
 
   private FullAddress getRandomNode() {
+    if (this.getReplicas().size() == 0) {
+      return null;
+    }
+    if (this.getReplicas().size() == 1) {
+      // Only leader available
+      return this.getLeaderAddress();
+    }
     Object[] keys = this.getReplicas().keySet().toArray();
     FullAddress randomAddress = null;
     do {
